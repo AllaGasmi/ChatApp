@@ -1,0 +1,139 @@
+@model ChatAppProj.DTO.LoginDto
+
+@{
+    ViewData["Title"] = "Login";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+}
+
+<div class="profile-container">
+    <div class="profile-header">
+        <h2>Sign In</h2>
+        <p class="text-muted">Enter your credentials to access your account</p>
+    </div>
+
+    @if (ViewBag.Message != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @ViewBag.Message
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (ViewData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @ViewData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <form asp-action="Login" method="post">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger">
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Email" class="form-label">Email Address</label>
+            <input asp-for="Email" class="form-control" placeholder="Enter your email address" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password" class="form-label">Password</label>
+            <div class="input-group">
+                <input asp-for="Password" type="password" class="form-control" placeholder="Enter your password" id="passwordInput" />
+                <button type="button" class="toggle-password" id="togglePassword">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <div class="form-check">
+            <input asp-for="RememberMe" class="form-check-input" id="rememberMe" />
+            <label asp-for="RememberMe" class="form-check-label" for="rememberMe">
+                Keep me signed in
+            </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+        </button>
+
+        <div class="auth-links">
+            <p class="mb-2">
+                Don't have an account? 
+                <a asp-action="Register" class="fw-bold">Create Account</a>
+            </p>
+            <p class="mb-0">
+                <a href="#" class="text-muted small">
+                    <i class="bi bi-question-circle me-1"></i> Forgot your password?
+                </a>
+            </p>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Password visibility toggle
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('passwordInput');
+            
+            if (togglePassword && passwordInput) {
+                togglePassword.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    
+                    // Toggle eye icon
+                    const icon = this.querySelector('i');
+                    if (type === 'password') {
+                        icon.classList.remove('bi-eye-slash');
+                        icon.classList.add('bi-eye');
+                    } else {
+                        icon.classList.remove('bi-eye');
+                        icon.classList.add('bi-eye-slash');
+                    }
+                });
+            }
+            
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+            
+            // Add focus animation to inputs
+            const inputs = document.querySelectorAll('.form-control');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('focused');
+                });
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('focused');
+                });
+            });
+            
+            // Form validation styling
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function() {
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="bi bi-hourglass me-2"></i> Signing in...';
+                    }
+                });
+            }
+        });
+    </script>
+}

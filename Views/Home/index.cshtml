@@ -1,8 +1,121 @@
 @{
-    ViewData["Title"] = "Home";
+    ViewData["Title"] = "Dashboard";
+    var userName = ViewBag.UserName ?? "User";
+    var userAvatar = ViewBag.UserAvatar ?? "https://via.placeholder.com/80";
 }
 
-<h1>Welcome to ChatApp</h1>
+@section Styles {
+    <link rel="stylesheet" href="~/css/home.css" asp-append-version="true" />
+}
+
+<div class="dashboard-container">
+    <!-- Welcome Header -->
+    <div class="dashboard-header">
+        <img src="@userAvatar" alt="@userName" 
+             style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid #667eea; margin-bottom: 1.5rem;">
+        
+        <h1 class="welcome-message">Welcome back, @userName!</h1>
+        <p class="welcome-subtitle">Here's what's happening with your account today</p>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="quick-stats">
+        <div class="stat-box">
+            <div class="stat-number">12</div>
+            <div class="stat-label">New Messages</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-number">5</div>
+            <div class="stat-label">Active Chats</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-number">3</div>
+            <div class="stat-label">Unread</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-number">8</div>
+            <div class="stat-label">Friends Online</div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions-grid">
+        <a asp-controller="Chat" asp-action="Index" class="action-card">
+            <div class="action-icon">
+                <i class="bi bi-chat-left-text"></i>
+            </div>
+            <h3 class="action-title">Start Chatting</h3>
+            <p class="action-description">Send messages to friends or start group conversations</p>
+        </a>
+
+        <a asp-controller="Account" asp-action="Profile" class="action-card">
+            <div class="action-icon">
+                <i class="bi bi-person"></i>
+            </div>
+            <h3 class="action-title">Edit Profile</h3>
+            <p class="action-description">Update your profile picture and personal information</p>
+        </a>
+
+        <a href="#" class="action-card">
+            <div class="action-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3 class="action-title">Find Friends</h3>
+            <p class="action-description">Discover and connect with new people</p>
+        </a>
+
+        <a href="#" class="action-card">
+            <div class="action-icon">
+                <i class="bi bi-gear"></i>
+            </div>
+            <h3 class="action-title">Settings</h3>
+            <p class="action-description">Customize your chat preferences and notifications</p>
+        </a>
+    </div>
+
+    <!-- Recent Chats -->
+    <div class="recent-section">
+        <div class="section-title">
+            <span><i class="bi bi-chat-left me-2"></i> Recent Conversations</span>
+            <a asp-controller="Chat" asp-action="Index" class="view-all-link">
+                View All <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+
+        <div class="recent-item">
+            <img src="https://via.placeholder.com/50" alt="Alex" class="recent-avatar">
+            <div class="recent-info">
+                <div class="recent-name">Alex Johnson</div>
+                <div class="recent-text">Are we meeting tomorrow?</div>
+                <div class="recent-time">10:30 AM</div>
+            </div>
+            <span class="unread-badge">3</span>
+        </div>
+
+        <div class="recent-item">
+            <img src="https://via.placeholder.com/50" alt="Sarah" class="recent-avatar">
+            <div class="recent-info">
+                <div class="recent-name">Sarah Miller</div>
+                <div class="recent-text">Thanks for your help!</div>
+                <div class="recent-time">Yesterday</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Simple Call to Action -->
+    <div class="dashboard-header" style="text-align: center;">
+        <h3 class="welcome-message" style="font-size: 1.5rem;">Need Help?</h3>
+        <p class="welcome-subtitle">Check out our guide or contact support</p>
+        <div style="margin-top: 1.5rem;">
+            <a href="#" class="btn btn-nav-outline me-2">
+                <i class="bi bi-question-circle me-1"></i> Help Center
+            </a>
+            <a href="#" class="btn btn-nav">
+                <i class="bi bi-headset me-1"></i> Contact Support
+            </a>
+        </div>
+    </div>
+</div>
 
 <div id="chat">
     <input id="messageInput" placeholder="Enter message..." />
