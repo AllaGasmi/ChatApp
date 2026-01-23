@@ -1,11 +1,12 @@
 ﻿using ChatAppProj.RepositoryContracts;
+using ChatAppProj.Models;
 
 namespace ChatAppProj.Repositories;
 
 public class FriendshipRepository : GenericRepository<Friendship>, IFriendshipRepository {
     private readonly AppDbContext _context;
 
-    public FriendshipRepository(AppDbContext context) : base(context, context.Friendships) {
+    public FriendshipRepository(AppDbContext context) : base(context) {
         _context = context;
     }
 

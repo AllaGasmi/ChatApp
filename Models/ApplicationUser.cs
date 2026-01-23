@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Identity;
-
+namespace ChatAppProj.Models;
 public class ApplicationUser : IdentityUser<int>
 {
     public string? DisplayName { get; set; }

@@ -1,4 +1,5 @@
 ﻿namespace ChatAppProj.RepositoryContracts;
+using ChatAppProj.Models;
 
 public interface IFriendshipRepository : IGenericRepository<Friendship> {
     Friendship? GetFriendship(int user1, int user2);

@@ -4,35 +4,42 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Microsoft.IdentityModel.Tokens;
+using ChatAppProj.ServiceContracts;
+using ChatAppProj.RepositoryContracts;
+using ChatAppProj.Repositories;
+using ChatAppProj.Services;
+using ChatAppProj.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-
-builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options => options.SignIn.RequireConfirmedAccount = true)
-    .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
-builder.Services.Configure<IdentityOptions>(options =>
+builder.Services.AddIdentity<ApplicationUser, IdentityRole<int>>(options =>
 {
-    // Password settings.
+    options.SignIn.RequireConfirmedAccount = true;
+
+    // Password settings
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequiredLength = 6;
     options.Password.RequiredUniqueChars = 1;
-    // Lockout settings.
+
+    // Lockout settings
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
     options.Lockout.AllowedForNewUsers = true;
-    // User settings.
-    options.User.AllowedUserNameCharacters =
-    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
+
+    // User settings
+    options.User.AllowedUserNameCharacters = 
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+";
     options.User.RequireUniqueEmail = false;
-});
+
+}).AddEntityFrameworkStores<AppDbContext>()
+  .AddDefaultTokenProviders();
+
 var jwtSecret = builder.Configuration["JwtSettings:Secret"]!;
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 
@@ -49,7 +56,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["JwtSettings:Audience"],
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
         };
-        
+
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
@@ -57,66 +64,60 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var token = context.Request.Query["access_token"];
                 if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
                     context.Token = token;
+
                 return Task.CompletedTask;
             }
         };
     });
-    // Services
-// builder.Services.AddScoped<IAuthService, AuthService>();
-// builder.Services.AddScoped<IFriendshipService, FriendshipService>();
-// builder.Services.AddScoped<IConversationService, ConversationService>();
 
-// SignalR
+builder.Services.AddControllersWithViews();
+
 builder.Services.AddSignalR();
 
-// CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+    options.AddPolicy("AllowAll", policy => policy
+        .AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader());
 });
 
+builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
+// Repositories
+builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
+builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
+builder.Services.AddScoped<IConversationParticipantRepository, ConversationParticipantRepository>();
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Services
+builder.Services.AddScoped<IConversationService, ConversationService>();
+builder.Services.AddScoped<IFriendshipService, FriendshipService>();
+
+// builder.Services.AddEndpointsApiExplorer();
+// builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// if (app.Environment.IsDevelopment())
+// {
+//     app.UseSwagger();
+//     app.UseSwaggerUI();
+// }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+app.UseRouting();
 app.UseCors("AllowAll");
+
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
-app.MapHub<ChatHub>("/chatHub");
-app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<ChatHub>("/chatHub");
+
+app.Run();

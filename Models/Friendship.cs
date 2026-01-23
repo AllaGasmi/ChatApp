@@ -1,3 +1,4 @@
+namespace ChatAppProj.Models;
 public class Friendship
 {
     public int Id { get; set; }

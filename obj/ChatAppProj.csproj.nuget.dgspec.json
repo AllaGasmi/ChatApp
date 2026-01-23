@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\hp\\Documents\\School\\S3a\\Frameworks de Développement\\Projet\\Projet\\ChatAppProj.csproj": {}
+    "C:\\Users\\Oumayma\\Desktop\\Projects\\dotnet\\ChatApp\\ChatApp\\ChatAppProj.csproj": {}
   },
   "projects": {
-    "C:\\Users\\hp\\Documents\\School\\S3a\\Frameworks de Développement\\Projet\\Projet\\ChatAppProj.csproj": {
+    "C:\\Users\\Oumayma\\Desktop\\Projects\\dotnet\\ChatApp\\ChatApp\\ChatAppProj.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\hp\\Documents\\School\\S3a\\Frameworks de Développement\\Projet\\Projet\\ChatAppProj.csproj",
+        "projectUniqueName": "C:\\Users\\Oumayma\\Desktop\\Projects\\dotnet\\ChatApp\\ChatApp\\ChatAppProj.csproj",
         "projectName": "ChatAppProj",
-        "projectPath": "C:\\Users\\hp\\Documents\\School\\S3a\\Frameworks de Développement\\Projet\\Projet\\ChatAppProj.csproj",
-        "packagesPath": "C:\\Users\\hp\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\hp\\Documents\\School\\S3a\\Frameworks de Développement\\Projet\\Projet\\obj\\",
+        "projectPath": "C:\\Users\\Oumayma\\Desktop\\Projects\\dotnet\\ChatApp\\ChatApp\\ChatAppProj.csproj",
+        "packagesPath": "C:\\Users\\Oumayma\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Oumayma\\Desktop\\Projects\\dotnet\\ChatApp\\ChatApp\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\hp\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\Oumayma\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
@@ -97,7 +97,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.413/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\Microsoft .net\\sdk\\8.0.414/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

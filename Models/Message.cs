@@ -1,3 +1,4 @@
+namespace ChatAppProj.Models;
 public class Message
 {
     public int Id { get; set; }

@@ -130,6 +130,9 @@ namespace ChatAppProj.Migrations
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
+
                     b.Property<int>("UserId")
                         .HasColumnType("int");
 

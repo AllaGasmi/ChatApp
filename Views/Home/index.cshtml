@@ -1,0 +1,34 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<h1>Welcome to ChatApp</h1>
+
+<div id="chat">
+    <input id="messageInput" placeholder="Enter message..." />
+    <button onclick="sendMessage()">Send</button>
+    <ul id="messagesList"></ul>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+<script>
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .build();
+
+    connection.start().then(() => console.log("Connected to chatHub"));
+
+    connection.on("ReceiveMessage", (user, message) => {
+        const li = document.createElement("li");
+        li.textContent = `${user}: ${message}`;
+        document.getElementById("messagesList").appendChild(li);
+    });
+
+    function sendMessage() {
+    const msg = document.getElementById("messageInput").value;
+    const conversationId = 1; 
+    connection.invoke("SendMessage", conversationId, msg);
+    document.getElementById("messageInput").value = "";
+    }
+
+</script>

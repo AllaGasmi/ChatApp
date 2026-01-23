@@ -7,9 +7,10 @@ public class GenericRepository <T> : IGenericRepository<T> where T : class {
     private readonly AppDbContext _context;
     private readonly DbSet<T> _dbSet;
 
-    public GenericRepository(AppDbContext context, DbSet<T> dbSet) {
+    public GenericRepository(AppDbContext context) 
+    {
         _context = context;
-        _dbSet = dbSet;
+        _dbSet = _context.Set<T>(); 
     }
 
     public void Create(T entity) {

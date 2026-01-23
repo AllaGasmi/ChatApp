@@ -1,92 +1,110 @@
-
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
+using ChatAppProj.ServiceContracts;
+using ChatAppProj.Models;
 
-
-[Authorize]  
+//[Authorize]
 public class ChatHub : Hub
 {
-    private readonly AppDbContext _context;
     private readonly UserManager<ApplicationUser> _userManager;
-    
-    public ChatHub(AppDbContext context, UserManager<ApplicationUser> userManager)
+    private readonly IConversationService _conversationService;
+
+    public ChatHub(UserManager<ApplicationUser> userManager,IConversationService conversationService)
     {
-        _context = context;
         _userManager = userManager;
+        _conversationService = conversationService;
     }
-    
+
+    private int GetUserId()
+    {
+        // return int.Parse(Context.User!.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var httpContext = Context.GetHttpContext();
+        var userIdString = httpContext.Request.Query["userId"].ToString();
+
+        if (int.TryParse(userIdString, out int userId))
+            return userId;
+
+        // fallback
+        return 1;
+    }
     public override async Task OnConnectedAsync()
     {
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        
-        if (!string.IsNullOrEmpty(userId))
+        int userId = GetUserId();
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user != null)
         {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user != null)
-            {
-                user.IsOnline = true;
-                user.LastSeen = DateTime.UtcNow;
-                await _userManager.UpdateAsync(user);
-                
-                
-                await Clients.Others.SendAsync("UserOnline", int.Parse(userId), user.UserName);
-            }
+            user.IsOnline = true;
+            user.LastSeen = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+
+            await Clients.Others.SendAsync("UserOnline", userId, user.UserName);
         }
-        
+
+        var conversations = _conversationService.GetUserConversations(userId);
+
+        foreach (var conv in conversations)
+        {
+            await Groups.AddToGroupAsync(
+                Context.ConnectionId,
+                $"conversation_{conv.Id}"
+            );
+        }
+
         await base.OnConnectedAsync();
     }
-    
+
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        
-        if (!string.IsNullOrEmpty(userId))
+        int userId = GetUserId();
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user != null)
         {
-            var user = await _userManager.FindByIdAsync(userId);
-            if (user != null)
-            {
-                user.IsOnline = false;
-                user.LastSeen = DateTime.UtcNow;
-                await _userManager.UpdateAsync(user);
-                
-                // Notifier les amis que l'utilisateur est hors ligne
-                await Clients.Others.SendAsync("UserOffline", int.Parse(userId), user.UserName);
-            }
+            user.IsOnline = false;
+            user.LastSeen = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+
+            await Clients.Others.SendAsync("UserOffline", userId, user.UserName);
         }
-        
+
         await base.OnDisconnectedAsync(exception);
     }
-    
     public async Task SendMessage(int conversationId, string content)
     {
-        var userId = int.Parse(Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-        
-        var message = new Message
-        {
-            ConversationId = conversationId,
-            SenderId = userId,
-            Content = content,
-            SentAt = DateTime.UtcNow,
-            IsAI = false
-        };
-        
-        _context.Messages.Add(message);
-        await _context.SaveChangesAsync();
-        
+        int userId = GetUserId();
+
+        var message = _conversationService.SendMessage(
+            conversationId,
+            userId,
+            content
+        );
 
         await Clients.Group($"conversation_{conversationId}")
             .SendAsync("ReceiveMessage", message);
     }
-    
     public async Task JoinConversation(int conversationId)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"conversation_{conversationId}");
+        int userId = GetUserId();
+
+        if (!_conversationService.IsUserInConversation(conversationId, userId))
+            throw new HubException("Access denied");
+
+        await Groups.AddToGroupAsync(
+            Context.ConnectionId,
+            $"conversation_{conversationId}"
+        );
     }
-    
     public async Task LeaveConversation(int conversationId)
     {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"conversation_{conversationId}");
+        await Groups.RemoveFromGroupAsync(
+            Context.ConnectionId,
+            $"conversation_{conversationId}"
+        );
     }
+
+
 }
+

@@ -1,5 +1,6 @@
 using ChatAppProj.RepositoryContracts;
 using ChatAppProj.ServiceContracts;
+using ChatAppProj.Models;
 
 namespace ChatAppProj.Services;
 

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using ChatAppProj.Models;
 
 
 public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<int>, int>
