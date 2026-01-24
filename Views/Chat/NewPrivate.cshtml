@@ -1,0 +1,241 @@
+@{
+    ViewData["Title"] = "New Private Chat";
+    var users = ViewBag.Users as List<ChatAppProj.Models.ApplicationUser>;
+}
+
+@section Styles {
+    <style>
+        .new-chat-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: #666;
+        }
+
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .user-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .user-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.5rem;
+            position: relative;
+        }
+
+        .online-indicator {
+            width: 16px;
+            height: 16px;
+            background: #10b981;
+            border-radius: 50%;
+            border: 3px solid white;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+
+        .offline-indicator {
+            width: 16px;
+            height: 16px;
+            background: #999;
+            border-radius: 50%;
+            border: 3px solid white;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+
+        .user-details h3 {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .user-status {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .start-chat-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .start-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #667eea;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            color: #764ba2;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+    </style>
+}
+
+<div class="new-chat-container">
+    @Html.AntiForgeryToken()
+    
+    <a asp-action="Index" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to Conversations
+    </a>
+
+    <div class="page-header">
+        <h1>Start a Private Chat</h1>
+        <p>Choose a user to start a one-on-one conversation</p>
+    </div>
+
+    @if (users.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-person-x"></i>
+            <h2>No Users Available</h2>
+            <p>There are no other users to chat with at the moment.</p>
+        </div>
+    }
+    else
+    {
+        <div class="users-grid">
+            @foreach (var user in users)
+            {
+                var initial = user.UserName?.Substring(0, 1).ToUpper() ?? "?";
+                var isOnline = user.IsOnline;
+                var lastSeen = user.LastSeen.HasValue 
+                    ? $"Last seen {user.LastSeen.Value.ToString("MMM dd, HH:mm")}"
+                    : "Never seen";
+
+                <div class="user-card" onclick="startChat(@user.Id)">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            @initial
+                            @if (isOnline)
+                            {
+                                <span class="online-indicator"></span>
+                            }
+                            else
+                            {
+                                <span class="offline-indicator"></span>
+                            }
+                        </div>
+                        <div class="user-details">
+                            <h3>@user.UserName</h3>
+                            <div class="user-status">
+                                @if (isOnline)
+                                {
+                                    <span style="color: #10b981;">● Online</span>
+                                }
+                                else
+                                {
+                                    <span>@lastSeen</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <button class="start-chat-btn">
+                        <i class="bi bi-chat-dots"></i> Start Chat
+                    </button>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function startChat(otherUserId) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '@Url.Action("CreatePrivate", "Chat")';
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'otherUserId';
+            input.value = otherUserId;
+
+            form.appendChild(input);
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) {
+                form.appendChild(token.cloneNode());
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    </script>
+}

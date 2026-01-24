@@ -1,0 +1,335 @@
+@{
+    ViewData["Title"] = "New Group Chat";
+    var users = ViewBag.Users as List<ChatAppProj.Models.ApplicationUser>;
+}
+
+@section Styles {
+    <style>
+        .new-group-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: #666;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #667eea;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            color: #764ba2;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1a1a1a;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .users-section {
+            margin-top: 2rem;
+        }
+
+        .users-section h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .selected-count {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            margin-left: 0.5rem;
+        }
+
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            border: 2px solid #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .user-checkbox-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .user-checkbox-card:hover {
+            background: #f9f9ff;
+            border-color: #667eea;
+        }
+
+        .user-checkbox-card.selected {
+            background: #f0f0ff;
+            border-color: #667eea;
+        }
+
+        .user-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .user-mini-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .user-mini-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-mini-name {
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .user-mini-status {
+            font-size: 0.75rem;
+            color: #10b981;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .btn-create {
+            flex: 1;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-create:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-create:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-cancel {
+            padding: 1rem 2rem;
+            background: white;
+            color: #666;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .help-text {
+            font-size: 0.875rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+    </style>
+}
+
+<div class="new-group-container">
+    <a asp-action="Index" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to Conversations
+    </a>
+
+    <div class="page-header">
+        <h1>Create Group Chat</h1>
+        <p>Create a group conversation and add participants</p>
+    </div>
+
+    <form asp-action="CreateGroup" method="post" id="groupForm" class="form-container">
+        <div class="form-group">
+            <label for="groupName" class="form-label">Group Name</label>
+            <input 
+                type="text" 
+                id="groupName" 
+                name="groupName" 
+                class="form-input" 
+                placeholder="e.g., Project Team, Study Group, Family Chat..."
+                required>
+            <div class="help-text">Choose a descriptive name for your group</div>
+        </div>
+
+        <div class="users-section">
+            <h3>
+                Add Members
+                <span class="selected-count" id="selectedCount">0 selected</span>
+            </h3>
+            <div class="help-text" style="margin-bottom: 1rem;">
+                Select at least one person to add to the group
+            </div>
+
+            @if (users.Count == 0)
+            {
+                <div style="text-align: center; padding: 2rem; color: #999;">
+                    <i class="bi bi-person-x" style="font-size: 3rem;"></i>
+                    <p>No users available to add to the group</p>
+                </div>
+            }
+            else
+            {
+                <div class="users-grid">
+                    @foreach (var user in users)
+                    {
+                        var initial = user.UserName?.Substring(0, 1).ToUpper() ?? "?";
+                        var isOnline = user.IsOnline;
+
+                        <label class="user-checkbox-card" for="user_@user.Id">
+                            <input 
+                                type="checkbox" 
+                                id="user_@user.Id" 
+                                name="userIds" 
+                                value="@user.Id"
+                                class="user-checkbox"
+                                onchange="updateSelectedCount()">
+                            <div class="user-mini-avatar">@initial</div>
+                            <div class="user-mini-info">
+                                <div class="user-mini-name">@user.UserName</div>
+                                @if (isOnline)
+                                {
+                                    <div class="user-mini-status">● Online</div>
+                                }
+                            </div>
+                        </label>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="form-actions">
+            <a asp-action="Index" class="btn-cancel">Cancel</a>
+            <button type="submit" class="btn-create" id="createBtn" disabled>
+                <i class="bi bi-people"></i> Create Group
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+            const count = checkboxes.length;
+            const selectedCountEl = document.getElementById('selectedCount');
+            const createBtn = document.getElementById('createBtn');
+            
+            selectedCountEl.textContent = `${count} selected`;
+            createBtn.disabled = count === 0;
+
+            document.querySelectorAll('.user-checkbox-card').forEach(card => {
+                const checkbox = card.querySelector('.user-checkbox');
+                if (checkbox.checked) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+        }
+
+        document.getElementById('groupForm').addEventListener('submit', function(e) {
+            const groupName = document.getElementById('groupName').value.trim();
+            const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+
+            if (!groupName) {
+                e.preventDefault();
+                alert('Please enter a group name');
+                return;
+            }
+
+            if (checkboxes.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one member for the group');
+                return;
+            }
+        });
+
+        updateSelectedCount();
+    </script>
+}

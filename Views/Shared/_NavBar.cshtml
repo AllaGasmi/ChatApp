@@ -1,21 +1,116 @@
-<header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MVC Movie</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - ChatApp</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-custom">
+            <div class="container">
+                <a class="navbar-brand navbar-brand-custom" asp-area="" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-chat-dots"></i> ChatApp
+                </a>
+
+                <!-- Mobile Toggle -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+
+                <!-- Navbar Content -->
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                        <!-- AUTHENTICATED USER NAVBAR -->
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "active" : "")"
+                                   asp-controller="Home" asp-action="Index">
+                                    <i class="bi bi-house-door me-1"></i> Home
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Chat" ? "active" : "")"
+                                   asp-controller="Chat" asp-action="Index">
+                                    <i class="bi bi-chat-left-text me-1"></i> Chat
+                                </a>
+                            </li>
+                        </ul>
+
+                        <!-- Search Bar (only for authenticated users) -->
+                        <div class="navbar-search mx-lg-3">
+                            <div class="position-relative">
+                                <i class="bi bi-search search-icon"></i>
+                                <input type="text" class="form-control search-input"
+                                       placeholder="Search messages, users...">
+                            </div>
+                        </div>
+
+                        <!-- User Dropdown Menu -->
+                        <div class="dropdown">
+                            <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
+                               id="userDropdown" data-bs-toggle="dropdown">
+                                <img src="@(ViewBag.UserAvatar ?? "https://via.placeholder.com/32")" 
+                                     alt="User" class="user-avatar">
+                                <span class="d-none d-lg-inline ms-1 text-dark fw-medium">
+                                    @(ViewBag.UserName ?? "User")
+                                </span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end user-dropdown" aria-labelledby="userDropdown">
+                                <li>
+                                    <a class="dropdown-item dropdown-item-custom" asp-controller="Account" asp-action="Profile">
+                                        <i class="bi bi-pencil-square"></i> Edit Profile
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider dropdown-divider-custom"></li>
+                                <li>
+                                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="dropdown-item dropdown-item-custom text-danger logout-btn">
+                                            <i class="bi bi-box-arrow-right"></i> Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- UNAUTHENTICATED USER NAVBAR -->
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "active" : "")"
+                                   asp-controller="Home" asp-action="Index">
+                                    <i class="bi bi-house-door me-1"></i> Home
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom @(ViewContext.RouteData.Values["Action"]?.ToString() == "About" ? "active" : "")"
+                                   asp-controller="Home" asp-action="About">
+                                    <i class="bi bi-info-circle me-1"></i> About Us
+                                </a>
+                            </li>
+                        </ul>
+
+                        <!-- Login/Register Buttons -->
+                        <div class="d-flex gap-2">
+                            <a class="btn btn-nav-outline" asp-controller="Account" asp-action="Login">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Login
+                            </a>
+                            <a class="btn btn-nav" asp-controller="Account" asp-action="Register">
+                                <i class="bi bi-person-plus me-1"></i> Register
+                            </a>
+                        </div>
+                    }
                 </div>
             </div>
         </nav>
     </header>
+</body>
+    
+
+</html>
