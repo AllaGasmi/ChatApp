@@ -93,17 +93,34 @@ builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 // Services
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
+builder.Services.AddHttpClient<IAIService, AiService>();
+
 
 // builder.Services.AddEndpointsApiExplorer();
 // builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// if (app.Environment.IsDevelopment())
-// {
-//     app.UseSwagger();
-//     app.UseSwaggerUI();
-// }
+using (var scope = app.Services.CreateScope())
+{
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+    var aiUser = await userManager.FindByEmailAsync(SystemUsers.AiEmail);
+
+    if (aiUser == null)
+    {
+        aiUser = new ApplicationUser
+        {
+            UserName = SystemUsers.AiUserName,
+            Email = SystemUsers.AiEmail,
+            DisplayName = SystemUsers.AiDisplayName,
+            CreatedAt = DateTime.UtcNow,
+            IsOnline = true
+        };
+        await userManager.CreateAsync(aiUser, "AI_Not_Used_123!");
+    }
+}
+
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

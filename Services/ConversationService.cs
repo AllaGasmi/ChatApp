@@ -2,6 +2,7 @@ using ChatAppProj.RepositoryContracts;
 using ChatAppProj.ServiceContracts;
 using ChatAppProj.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 public class ConversationService : IConversationService
 {
@@ -10,14 +11,16 @@ public class ConversationService : IConversationService
     private readonly IConversationParticipantRepository _participantRepo;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IWebHostEnvironment _environment;
+    private readonly IAIService _aiService;
 
-    public ConversationService(IConversationRepository conversationRepo,IMessageRepository messageRepo,IConversationParticipantRepository participantRepo,UserManager<ApplicationUser> userManager,IWebHostEnvironment environment)
+    public ConversationService(IConversationRepository conversationRepo, IMessageRepository messageRepo, IConversationParticipantRepository participantRepo, UserManager<ApplicationUser> userManager, IWebHostEnvironment environment, IAIService aiService)
     {
         _conversationRepo = conversationRepo;
         _messageRepo = messageRepo;
         _participantRepo = participantRepo;
         _userManager = userManager;
         _environment = environment;
+        _aiService = aiService;
     }
 
     public Conversation CreatePrivateConversation(int creatorId, int otherUserId)
@@ -80,12 +83,16 @@ public class ConversationService : IConversationService
         return _conversationRepo.GetUserConversations(userId);
     }
 
-    public MessageDto SendMessage(int conversationId, int senderId, string content)
+    public List<MessageDto> SendMessage(int conversationId, int senderId, string content)
     {
+        
         if (!_participantRepo.IsUserInConversation(conversationId, senderId))
-            throw new UnauthorizedAccessException("User not in conversation");
+            throw new UnauthorizedAccessException();
 
-        var message = new Message
+        var result = new List<MessageDto>();
+
+
+        var userMessage = new Message
         {
             ConversationId = conversationId,
             SenderId = senderId,
@@ -93,17 +100,49 @@ public class ConversationService : IConversationService
             IsAI = false,
             SentAt = DateTime.UtcNow
         };
+        _messageRepo.Create(userMessage);
 
-        _messageRepo.Create(message);
-        return new MessageDto
+        result.Add(new MessageDto
         {
-            Id = message.Id,
-            ConversationId = message.ConversationId,
-            SenderId = message.SenderId,
-            Content = message.Content,
-            IsAI = message.IsAI,
-            SentAt = message.SentAt
-        };
+            Id = userMessage.Id,
+            ConversationId = userMessage.ConversationId,
+            SenderId = userMessage.SenderId,
+            Content = userMessage.Content,
+            IsAI = false,
+            SentAt = userMessage.SentAt
+        });
+
+        var conversation = _conversationRepo.GetConversationWithDetails(conversationId);
+        var aiParticipant = conversation.Participants
+            .FirstOrDefault(p => p.User.Email == "ai@chatapp.local");
+
+        if (aiParticipant != null && senderId != aiParticipant.UserId)
+        {
+
+            string aiReply = _aiService.GetAIResponse(content); 
+
+            var aiMessage = new Message
+            {
+                ConversationId = conversationId,
+                SenderId = aiParticipant.UserId,
+                Content = aiReply,
+                IsAI = true,
+                SentAt = DateTime.UtcNow
+            };
+            _messageRepo.Create(aiMessage);
+
+            result.Add(new MessageDto
+            {
+                Id = aiMessage.Id,
+                ConversationId = aiMessage.ConversationId,
+                SenderId = aiMessage.SenderId,
+                Content = aiMessage.Content,
+                IsAI = true,
+                SentAt = aiMessage.SentAt
+            });
+        }
+
+        return result;
     }
 
     public void AddParticipant(int conversationId, int actorId, int targetUserId)
@@ -163,7 +202,7 @@ public class ConversationService : IConversationService
     {
         var unreadCount = _messageRepo.GetUnreadMessageCount(userId);
         var activeChatsCount = _conversationRepo.GetActiveConversationsCount(userId);
-        
+
         var conversations = _conversationRepo.GetUserConversations(userId);
         var privateChatUserIds = conversations
             .Where(c => c.Type == ConversationType.Private)
@@ -193,13 +232,14 @@ public class ConversationService : IConversationService
     public List<RecentConversationDto> GetRecentConversations(int userId, int count = 3)
     {
         var conversations = _conversationRepo.GetUserConversations(userId);
-        
+
         return conversations
             .OrderByDescending(c => c.Messages?.Max(m => (DateTime?)m.SentAt) ?? c.CreatedAt)
             .Take(count)
-            .Select(c => {
+            .Select(c =>
+            {
                 var lastMessage = c.Messages?.OrderByDescending(m => m.SentAt).FirstOrDefault();
-                
+
                 string name;
                 string avatarUrl = "https://via.placeholder.com/50";
                 bool isOnline = false;
@@ -215,12 +255,12 @@ public class ConversationService : IConversationService
                     name = c.Name ?? "Group Chat";
                 }
 
-                var timeAgo = lastMessage != null 
+                var timeAgo = lastMessage != null
                     ? GetTimeAgo(lastMessage.SentAt)
                     : "No messages";
 
                 var unreadCount = c.Messages?
-                    .Count(m => m.SenderId != userId 
+                    .Count(m => m.SenderId != userId
                              && m.SentAt > DateTime.UtcNow.AddDays(-1)) ?? 0;
 
                 return new RecentConversationDto
@@ -249,7 +289,7 @@ public class ConversationService : IConversationService
             return $"{(int)timeSpan.TotalHours}h ago";
         if (timeSpan.TotalDays < 7)
             return $"{(int)timeSpan.TotalDays}d ago";
-        
+
         return dateTime.ToString("MMM dd");
     }
     public bool IsAdminOrCreator(int conversationId, int userId)
@@ -302,4 +342,48 @@ public class ConversationService : IConversationService
 
         _participantRepo.Delete(participant);
     }
+
+    public void EnsureAiConversation(int userId)
+    {
+        var aiUser = _userManager.Users.FirstOrDefault(u => u.Email == "ai@chatapp.local");
+        if (aiUser == null) return;
+
+        var exists = _conversationRepo.GetAllWithParticipants()
+            .Any(c =>
+                c.Type == ConversationType.Private && c.Participants != null &&
+                c.Participants.Any(p => p.UserId == userId) &&
+                c.Participants.Any(p => p.UserId == aiUser.Id));
+
+        if (!exists)
+        {
+            var conversation = new Conversation
+            {
+                Name = "AI Chat",
+                Type = ConversationType.Private,
+                CreatedAt = DateTime.UtcNow,
+                Participants = new List<ConversationParticipant>
+            {
+                new()
+                {
+                    UserId = userId,
+                    Role = ConversationRole.Member,
+                    JoinedAt = DateTime.UtcNow
+                },
+                new()
+                {
+                    UserId = aiUser.Id,
+                    Role = ConversationRole.Member,
+                    JoinedAt = DateTime.UtcNow
+                }
+            }
+            };
+
+            _conversationRepo.Create(conversation);
+        }
+    }
+
+    // public List<MessageDto> SendMessage(int conversationId, int senderId, string content)
+    // {
+    //     throw new NotImplementedException();
+    // }
 }

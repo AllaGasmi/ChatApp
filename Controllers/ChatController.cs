@@ -29,10 +29,12 @@ public class ChatController : Controller
         return int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
         int userId = GetCurrentUserId();
+         _conversationService.EnsureAiConversation(userId);
         var conversations = _conversationService.GetUserConversations(userId);
+        
         
         ViewBag.UserId = userId;
         ViewBag.UserName = User.Identity!.Name;

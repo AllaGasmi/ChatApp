@@ -76,15 +76,19 @@ public class ChatHub : Hub
     {
         int userId = GetUserId();
 
-        var message = _conversationService.SendMessage(
+        var messages = _conversationService.SendMessage(
             conversationId,
             userId,
             content
         );
 
-        await Clients.Group($"conversation_{conversationId}")
-            .SendAsync("ReceiveMessage", message);
+        foreach (var msg in messages)
+        {
+            await Clients.Group($"conversation_{conversationId}")
+                .SendAsync("ReceiveMessage", msg);
+        }
     }
+
     public async Task JoinConversation(int conversationId)
     {
         int userId = GetUserId();

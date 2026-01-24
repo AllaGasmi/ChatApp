@@ -3,12 +3,12 @@ using ChatAppProj.Models;
 namespace ChatAppProj.Repositories;
 using Microsoft.EntityFrameworkCore;
 
-public class ConversationRepository 
+public class ConversationRepository
     : GenericRepository<Conversation>, IConversationRepository
 {
     private readonly AppDbContext _context;
 
-    public ConversationRepository(AppDbContext context): base(context)
+    public ConversationRepository(AppDbContext context) : base(context)
     {
         _context = context;
     }
@@ -36,10 +36,20 @@ public class ConversationRepository
     public int GetActiveConversationsCount(int userId)
     {
         var weekAgo = DateTime.UtcNow.AddDays(-7);
-        
+
         return _context.Conversations
-            .Where(c => c.Participants.Any(p => p.UserId == userId) 
+            .Where(c => c.Participants.Any(p => p.UserId == userId)
                      && c.Messages.Any(m => m.SentAt >= weekAgo))
             .Count();
     }
+
+    public List<Conversation> GetAllWithParticipants()
+    {
+        return _context.Conversations
+            .Include(c => c.Participants)
+            .ThenInclude(p => p.User)
+            .ToList();
+    }
+
+    
 }

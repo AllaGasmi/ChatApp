@@ -101,7 +101,7 @@ namespace ChatAppProj.Controllers
                 lockoutOnFailure: true);
 
             if (result.Succeeded)
-                return RedirectToAction("Profile");
+                return RedirectToAction("Index", "Home");
 
             if (result.IsLockedOut)
             {
