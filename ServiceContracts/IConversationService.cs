@@ -13,5 +13,8 @@ public interface IConversationService
     bool IsUserInConversation(int conversationId, int userId);
     DashboardStatsDto GetDashboardStats(int userId);
     List<RecentConversationDto> GetRecentConversations(int userId, int count = 3);
+    void UpdateGroupInfo(int conversationId, int actorId, string? groupName, IFormFile? groupPicture);
+    void LeaveGroup(int conversationId, int userId);
+    bool IsAdminOrCreator(int conversationId, int userId);
 
 }

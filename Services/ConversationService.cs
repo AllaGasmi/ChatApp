@@ -9,13 +9,15 @@ public class ConversationService : IConversationService
     private readonly IMessageRepository _messageRepo;
     private readonly IConversationParticipantRepository _participantRepo;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IWebHostEnvironment _environment;
 
-    public ConversationService(IConversationRepository conversationRepo,IMessageRepository messageRepo,IConversationParticipantRepository participantRepo,UserManager<ApplicationUser> userManager)
+    public ConversationService(IConversationRepository conversationRepo,IMessageRepository messageRepo,IConversationParticipantRepository participantRepo,UserManager<ApplicationUser> userManager,IWebHostEnvironment environment)
     {
         _conversationRepo = conversationRepo;
         _messageRepo = messageRepo;
         _participantRepo = participantRepo;
         _userManager = userManager;
+        _environment = environment;
     }
 
     public Conversation CreatePrivateConversation(int creatorId, int otherUserId)
@@ -249,5 +251,55 @@ public class ConversationService : IConversationService
             return $"{(int)timeSpan.TotalDays}d ago";
         
         return dateTime.ToString("MMM dd");
+    }
+    public bool IsAdminOrCreator(int conversationId, int userId)
+    {
+        return _participantRepo.IsAdminOrCreator(conversationId, userId);
+    }
+
+    public void UpdateGroupInfo(int conversationId, int actorId, string? groupName, IFormFile? groupPicture)
+    {
+        if (!_participantRepo.IsAdminOrCreator(conversationId, actorId))
+            throw new UnauthorizedAccessException("Only admin or creator can update group info.");
+
+        var conversation = _conversationRepo.GetById(conversationId)
+            ?? throw new InvalidOperationException("Conversation not found.");
+
+        if (conversation.Type != ConversationType.Group)
+            throw new InvalidOperationException("Can only update group conversations.");
+
+        if (!string.IsNullOrWhiteSpace(groupName))
+        {
+            conversation.Name = groupName;
+        }
+
+        if (groupPicture != null && groupPicture.Length > 0)
+        {
+            var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "groups");
+            Directory.CreateDirectory(uploadsFolder);
+
+            var uniqueFileName = $"{conversationId}_{Guid.NewGuid()}{Path.GetExtension(groupPicture.FileName)}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                groupPicture.CopyTo(fileStream);
+            }
+
+            conversation.GroupPicture = $"/uploads/groups/{uniqueFileName}";
+        }
+
+        _conversationRepo.Update(conversation);
+    }
+
+    public void LeaveGroup(int conversationId, int userId)
+    {
+        var participant = _participantRepo.GetParticipant(conversationId, userId)
+            ?? throw new InvalidOperationException("You are not in this conversation.");
+
+        if (participant.Role == ConversationRole.Creator)
+            throw new InvalidOperationException("Creator cannot leave the group. Transfer ownership first.");
+
+        _participantRepo.Delete(participant);
     }
 }

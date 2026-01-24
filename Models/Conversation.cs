@@ -6,6 +6,7 @@ public class Conversation
     public ConversationType Type { get; set; }
     public DateTime CreatedAt { get; set; }
     public ICollection<ConversationParticipant> Participants { get; set; }
+    public string? GroupPicture { get; set; } 
     public ICollection<Message> Messages { get; set; }
 }
 public enum ConversationType { Private, Group }

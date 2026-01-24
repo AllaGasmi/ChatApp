@@ -3,10 +3,13 @@
 @{
     ViewData["Title"] = ViewBag.ConversationName;
     var userId = ViewBag.UserId;
-    var userName = ViewBag.DisplayName;
+    var userName = ViewBag.UserName;
     var conversationId = ViewBag.ConversationId;
     var conversationName = ViewBag.ConversationName;
     var messages = ViewBag.Messages as List<ChatAppProj.Models.Message>;
+    bool isGroup = ViewBag.IsGroup ?? false;
+    bool isCreator = ViewBag.IsCreator ?? false;
+    bool isAdminOrCreator = ViewBag.IsAdminOrCreator ?? false;
 }
 
 @section Styles {
@@ -16,19 +19,19 @@
         }
 
         .chat-wrapper {
-            max-width: 1400px;
+            max-width: 1800px;
             margin: 0 auto;
             height: calc(100vh - 100px);
             display: flex;
-            gap: 1rem;
+            gap: 1.2rem;
             padding: 1rem;
         }
 
         .sidebar {
-            width: 300px;
+            width: 400px;
             background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
+            border-radius: 16px;
+            padding: 1.8rem;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
@@ -50,6 +53,7 @@
         }
 
         .participant-avatar {
+            min-width: 40px;
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -283,16 +287,436 @@
             padding: 3rem;
             font-size: 1.125rem;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .modal-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.375rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .close-modal {
+            font-size: 2rem;
+            color: #999;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .form-group {
+            padding: 1.5rem 2rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-actions {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #f0f0f0;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn-modal {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 0.9375rem;
+        }
+
+        .btn-modal-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-modal-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-modal-secondary {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .btn-modal-secondary:hover {
+            background: #e8e8e8;
+        }
+
+        .group-info-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .group-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            font-weight: 600;
+            overflow: hidden;
+        }
+
+        .group-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .group-name-display {
+            font-size: 1.375rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: #1a1a1a;
+        }
+
+        .group-member-count {
+            text-align: center;
+            color: #999;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-group-action {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.75rem;
+            border-radius: 10px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary-action {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger-action {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-danger-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+        }
+
+        .participant-item {
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .participant-item:hover {
+            background: #f8f9ff;
+            transform: translateX(4px);
+        }
+
+        .participant-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 0.3rem;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .participant-item:hover .participant-actions {
+            opacity: 1;
+        }
+
+        .btn-participant-action {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            border: none;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-participant-action:hover {
+            background: #5a6fd8;
+            transform: translateY(-1px);
+        }
+
+        .btn-participant-action.danger {
+            background: #f5576c;
+        }
+
+        .btn-participant-action.danger:hover {
+            background: #e44d61;
+        }
+
+        .user-select-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 1rem 0;
+            border-radius: 10px;
+            border: 1px solid #f0f0f0;
+        }
+
+        .user-select-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .user-select-item:last-child {
+            border-bottom: none;
+        }
+
+        .user-select-item:hover {
+            background: #f8f9ff;
+        }
+
+        @@keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @@keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0); 
+            }
+        }
+
+        @@keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .role-creator {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .role-admin {
+            background: linear-gradient(135deg, #4fd1c5 0%, #319795 100%);
+            color: white;
+        }
+
+        .role-member {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @@media (max-width: 768px) {
+            .chat-wrapper {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: 2;
+            }
+            
+            .chat-container {
+                order: 1;
+            }
+            
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+            
+            .group-actions {
+                flex-direction: column;
+            }
+        }
     </style>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-error">
+        @TempData["Error"]
+    </div>
 }
 
 <div class="chat-wrapper">
     <div class="sidebar">
+        @if (isGroup)
+        {
+            <div class="group-info-section">
+                <div class="group-avatar">
+                    @if (!string.IsNullOrEmpty(Model.GroupPicture))
+                    {
+                        <img src="@Model.GroupPicture" alt="@conversationName" />
+                    }
+                    else
+                    {
+                        <span>@conversationName.Substring(0, 1).ToUpper()</span>
+                    }
+                </div>
+                <div class="group-name-display">@conversationName</div>
+                <div class="group-member-count">
+                    <i class="bi bi-people"></i>
+                    @Model.Participants.Count members
+                    @if (Model.Participants.Any(p => p.User.IsOnline))
+                    {
+                        <span style="color: #10b981; margin-left: 0.5rem;">
+                            • @Model.Participants.Count(p => p.User.IsOnline) online
+                        </span>
+                    }
+                </div>
+                
+                @if (isAdminOrCreator)
+                {
+                    <div class="group-actions">
+                        <button class="btn-group-action btn-primary-action" onclick="openEditGroupModal()">
+                            <i class="bi bi-pencil-square"></i>
+                            Edit Group
+                        </button>
+                        <button class="btn-group-action btn-primary-action" onclick="openAddMemberModal()">
+                            <i class="bi bi-person-plus"></i>
+                            Add Members
+                        </button>
+                    </div>
+                }
+                @if (!isCreator)
+                {
+                    <div class="group-actions" style="margin-top: 0.5rem;">
+                        <button class="btn-group-action btn-danger-action" onclick="leaveGroup()">
+                            <i class="bi bi-box-arrow-left"></i>
+                            Leave Group
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+        
+        <!-- Participants List -->
         <h3>
-            @if (Model.Type == ChatAppProj.Models.ConversationType.Group)
+            @if (isGroup)
             {
                 <i class="bi bi-people"></i>
-                <text> Participants</text>
+                <text> Members</text>
             }
             else
             {
@@ -300,11 +724,12 @@
                 <text> Chat Info</text>
             }
         </h3>
-        
         @foreach (var participant in Model.Participants)
         {
             var initial = participant.User.UserName?.Substring(0, 1).ToUpper() ?? "?";
             var isOnline = participant.User.IsOnline;
+            var isCurrentUser = participant.UserId == userId;
+            var roleClass = participant.Role.ToString().ToLower();
             
             <div class="participant-item">
                 <div class="participant-avatar">
@@ -314,22 +739,48 @@
                         <span class="online-dot"></span>
                     }
                 </div>
-                <div>
+                <div class="participant-info">
                     <div class="participant-name">
                         @participant.User.UserName
-                        @if (participant.UserId == userId)
+                        @if (isCurrentUser)
                         {
                             <text> (You)</text>
                         }
+                        <span class="role-badge role-@roleClass">@participant.Role.ToString()</span>
                     </div>
                     <div class="participant-role">
-                        @participant.Role.ToString()
+                        @if (isOnline)
+                        {
+                            <span style="color: #10b981;">● Online</span>
+                        }
+                        else
+                        {
+                            <span>○ Last seen recently</span>
+                        }
                     </div>
                 </div>
+                
+                @if (isGroup && isAdminOrCreator && !isCurrentUser && participant.Role != ChatAppProj.Models.ConversationRole.Creator)
+                {
+                    <div class="participant-actions">
+                        @if (isCreator && participant.Role == ChatAppProj.Models.ConversationRole.Member)
+                        {
+                            <button class="btn-participant-action" 
+                                    onclick="makeAdmin(@participant.UserId, '@participant.User.UserName')"
+                                    title="Make Admin">
+                                <i class="bi bi-shield-check"></i>
+                            </button>
+                        }
+                        <button class="btn-participant-action danger" 
+                                onclick="removeMember(@participant.UserId, '@participant.User.UserName')"
+                                title="Remove from group">
+                            <i class="bi bi-person-dash"></i>
+                        </button>
+                    </div>
+                }
             </div>
         }
     </div>
-
     <div class="chat-container">
         <div class="chat-header">
             <h2>@conversationName</h2>
@@ -351,7 +802,7 @@
                 @foreach (var message in messages)
                 {
                     var isSent = message.SenderId == userId;
-                    var senderName = message.Sender?.DisplayName ?? "Unknown";
+                    var senderName = message.Sender?.DisplayName ?? message.Sender?.UserName ?? "Unknown";
                     var senderInitial = senderName.Substring(0, 1).ToUpper();
                     var timeDisplay = message.SentAt.ToString("HH:mm");
 
@@ -370,10 +821,6 @@
             }
         </div>
 
-        <div class="typing-indicator" id="typingIndicator">
-            Someone is typing...
-        </div>
-
         <div class="message-input-container">
             <div class="message-input-wrapper">
                 <textarea 
@@ -390,12 +837,67 @@
     </div>
 </div>
 
+<div id="editGroupModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Group</h3>
+            <span class="close-modal" onclick="closeModal('editGroupModal')">&times;</span>
+        </div>
+        <form asp-action="UpdateGroupInfo" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="conversationId" value="@conversationId" />
+            
+            <div class="form-group">
+                <label class="form-label">Group Name</label>
+                <input type="text" name="groupName" class="form-input" 
+                       value="@conversationName" required />
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Group Picture</label>
+                <input type="file" name="groupPicture" class="form-input" 
+                       accept="image/*" />
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-modal btn-modal-secondary" 
+                        onclick="closeModal('editGroupModal')">Cancel</button>
+                <button type="submit" class="btn-modal btn-modal-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="addMemberModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add Member</h3>
+            <span class="close-modal" onclick="closeModal('addMemberModal')">&times;</span>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Search Users</label>
+            <input type="text" id="userSearch" class="form-input" 
+                   placeholder="Type to search..." onkeyup="filterUsers()" />
+        </div>
+        
+        <div class="user-select-list" id="userList">
+        </div>
+        
+        <div class="modal-actions">
+            <button type="button" class="btn-modal btn-modal-secondary" 
+                    onclick="closeModal('addMemberModal')">Cancel</button>
+        </div>
+    </div>
+</div>
 @section Scripts {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <script>
         const conversationId = @conversationId;
         const userId = @userId;
         const userName = "@userName";
+        const isGroup = @isGroup.ToString().ToLower();
+        let availableUsers = [];
 
         const messageInput = document.getElementById('messageInput');
         messageInput.addEventListener('input', function() {
@@ -423,7 +925,6 @@
             addMessageToUI(message);
             scrollToBottom();
         });
-
         async function sendMessage() {
             const content = messageInput.value.trim();
             if (!content) return;
@@ -452,7 +953,6 @@
                 sendMessage();
             }
         });
-
         function addMessageToUI(message) {
             const messagesContainer = document.getElementById('messagesContainer');
             
@@ -475,7 +975,7 @@
             messageDiv.innerHTML = `
                 <div class="message-avatar">${senderInitial}</div>
                 <div class="message-content">
-                    ${!isSent ? `<div class="message-sender">${senderName}</div>` : ''}
+                    ${!isSent ? `<div class="message-sender">${escapeHtml(senderName)}</div>` : ''}
                     <div class="message-text">${escapeHtml(message.content)}</div>
                     <div class="message-time">${time}</div>
                 </div>
@@ -495,10 +995,183 @@
             return div.innerHTML;
         }
 
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function openEditGroupModal() {
+            openModal('editGroupModal');
+        }
+
+        async function openAddMemberModal() {
+            openModal('addMemberModal');
+            await loadAvailableUsers();
+        }
+
+        // Load available users
+        async function loadAvailableUsers() {
+            try {
+                const response = await fetch(`/Chat/GetAvailableUsers?conversationId=${conversationId}`);
+                availableUsers = await response.json();
+                displayUsers(availableUsers);
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        function displayUsers(users) {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '';
+
+            if (users.length === 0) {
+                userList.innerHTML = '<p style="text-align: center; padding: 2rem; color: #999;">No users available to add</p>';
+                return;
+            }
+
+            users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'user-select-item';
+                userItem.innerHTML = `
+                    <div class="participant-avatar">
+                        ${user.userName.substring(0, 1).toUpperCase()}
+                        ${user.isOnline ? '<span class="online-dot"></span>' : ''}
+                    </div>
+                    <div style="flex: 1;">
+                        <div class="participant-name">${escapeHtml(user.displayName || user.userName)}</div>
+                        <div class="participant-role">${user.isOnline ? 'Online' : 'Offline'}</div>
+                    </div>
+                `;
+                userItem.onclick = () => addUserToGroup(user.id, user.displayName || user.userName);
+                userList.appendChild(userItem);
+            });
+        }
+
+        function filterUsers() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            const filtered = availableUsers.filter(user => 
+                (user.userName && user.userName.toLowerCase().includes(searchTerm)) ||
+                (user.displayName && user.displayName.toLowerCase().includes(searchTerm))
+            );
+            displayUsers(filtered);
+        }
+        async function addUserToGroup(targetUserId, userName) {
+            if (!confirm(`Add ${userName} to this group?`)) return;
+
+            const formData = new FormData();
+            formData.append('conversationId', conversationId);
+            formData.append('userId', targetUserId);
+            formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+            try {
+                const response = await fetch('/Chat/AddParticipant', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    closeModal('addMemberModal');
+                    location.reload(); 
+                } else {
+                    alert('Failed to add participant');
+                }
+            } catch (error) {
+                console.error('Error adding participant:', error);
+                alert('An error occurred');
+            }
+        }
+        async function removeMember(targetUserId, userName) {
+            if (!confirm(`Remove ${userName} from this group?`)) return;
+
+            const formData = new FormData();
+            formData.append('conversationId', conversationId);
+            formData.append('userId', targetUserId);
+            formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+            try {
+                const response = await fetch('/Chat/RemoveParticipant', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to remove participant');
+                }
+            } catch (error) {
+                console.error('Error removing participant:', error);
+                alert('An error occurred');
+            }
+        }
+
+        async function makeAdmin(targetUserId, userName) {
+            if (!confirm(`Make ${userName} an admin?`)) return;
+
+            const formData = new FormData();
+            formData.append('conversationId', conversationId);
+            formData.append('userId', targetUserId);
+            formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+            try {
+                const response = await fetch('/Chat/AssignAdmin', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to assign admin');
+                }
+            } catch (error) {
+                console.error('Error assigning admin:', error);
+                alert('An error occurred');
+            }
+        }
+
+        async function leaveGroup() {
+            if (!confirm('Are you sure you want to leave this group?')) return;
+
+            const formData = new FormData();
+            formData.append('conversationId', conversationId);
+            formData.append('userId', userId);
+            formData.append('__RequestVerificationToken', document.querySelector('input[name="__RequestVerificationToken"]').value);
+
+            try {
+                const response = await fetch('/Chat/RemoveParticipant', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    window.location.href = '/Chat/Index';
+                } else {
+                    alert('Failed to leave group');
+                }
+            } catch (error) {
+                console.error('Error leaving group:', error);
+                alert('An error occurred');
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
         scrollToBottom();
+
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => alert.style.display = 'none');
+        }, 5000);
 
         window.addEventListener('beforeunload', () => {
             connection.invoke("LeaveConversation", conversationId);
         });
     </script>
-}
+}      

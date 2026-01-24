@@ -2,6 +2,7 @@ using ChatAppProj.RepositoryContracts;
 using ChatAppProj.Models;
 using Microsoft.EntityFrameworkCore;
 
+
 namespace ChatAppProj.Repositories;
 public class MessageRepository : GenericRepository<Message>, IMessageRepository
 {

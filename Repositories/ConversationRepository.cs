@@ -1,7 +1,7 @@
 using ChatAppProj.RepositoryContracts;
-using Microsoft.EntityFrameworkCore;
 using ChatAppProj.Models;
 namespace ChatAppProj.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 public class ConversationRepository 
     : GenericRepository<Conversation>, IConversationRepository
