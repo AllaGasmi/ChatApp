@@ -3535,19 +3535,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\LENOVO\\.nuget\\packages\\": {}
+    "C:\\Users\\Oumayma\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\LENOVO\\ChatAppProj\\ChatAppProj.csproj",
+      "projectUniqueName": "C:\\Users\\Oumayma\\Desktop\\Projects\\dotnet\\ChatApp\\ChatApp\\ChatAppProj.csproj",
       "projectName": "ChatAppProj",
-      "projectPath": "C:\\Users\\LENOVO\\ChatAppProj\\ChatAppProj.csproj",
-      "packagesPath": "C:\\Users\\LENOVO\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\LENOVO\\ChatAppProj\\obj\\",
+      "projectPath": "C:\\Users\\Oumayma\\Desktop\\Projects\\dotnet\\ChatApp\\ChatApp\\ChatAppProj.csproj",
+      "packagesPath": "C:\\Users\\Oumayma\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Oumayma\\Desktop\\Projects\\dotnet\\ChatApp\\ChatApp\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\LENOVO\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "C:\\Users\\Oumayma\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -3630,7 +3630,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.414/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\Microsoft .net\\sdk\\8.0.414/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

@@ -11,5 +11,7 @@ public interface IConversationService
     void RemoveParticipant(int conversationId, int actorId, int targetUserId);
     void AssignAdmin(int conversationId, int actorId, int targetUserId);
     bool IsUserInConversation(int conversationId, int userId);
+    DashboardStatsDto GetDashboardStats(int userId);
+    List<RecentConversationDto> GetRecentConversations(int userId, int count = 3);
 
 }

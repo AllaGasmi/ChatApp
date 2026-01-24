@@ -1,7 +1,10 @@
+@using ChatAppProj.Models
 @{
     ViewData["Title"] = "Dashboard";
     var userName = ViewBag.UserName ?? "User";
     var userAvatar = ViewBag.UserAvatar ?? "https://via.placeholder.com/80";
+    var stats = ViewBag.Stats as DashboardStatsDto;
+    var recentConversations = ViewBag.RecentConversations as List<RecentConversationDto>;
 }
 
 @section Styles {
@@ -18,22 +21,21 @@
         <p class="welcome-subtitle">Here's what's happening with your account today</p>
     </div>
 
-    <!-- Quick Stats -->
     <div class="quick-stats">
         <div class="stat-box">
-            <div class="stat-number">12</div>
+            <div class="stat-number">@(stats?.NewMessages ?? 0)</div>
             <div class="stat-label">New Messages</div>
         </div>
         <div class="stat-box">
-            <div class="stat-number">5</div>
+            <div class="stat-number">@(stats?.ActiveChats ?? 0)</div>
             <div class="stat-label">Active Chats</div>
         </div>
         <div class="stat-box">
-            <div class="stat-number">3</div>
+            <div class="stat-number">@(stats?.UnreadMessages ?? 0)</div>
             <div class="stat-label">Unread</div>
         </div>
         <div class="stat-box">
-            <div class="stat-number">8</div>
+            <div class="stat-number">@(stats?.FriendsOnline ?? 0)</div>
             <div class="stat-label">Friends Online</div>
         </div>
     </div>
@@ -56,12 +58,12 @@
             <p class="action-description">Update your profile picture and personal information</p>
         </a>
 
-        <a href="#" class="action-card">
+        <a asp-controller="Chat" asp-action="NewPrivate" class="action-card">
             <div class="action-icon">
                 <i class="bi bi-people"></i>
             </div>
             <h3 class="action-title">Find Friends</h3>
-            <p class="action-description">Discover and connect with new people</p>
+            <p class="action-description">Start a new private conversation</p>
         </a>
 
         <a href="#" class="action-card">
@@ -73,7 +75,6 @@
         </a>
     </div>
 
-    <!-- Recent Chats -->
     <div class="recent-section">
         <div class="section-title">
             <span><i class="bi bi-chat-left me-2"></i> Recent Conversations</span>
@@ -82,28 +83,52 @@
             </a>
         </div>
 
-        <div class="recent-item">
-            <img src="https://via.placeholder.com/50" alt="Alex" class="recent-avatar">
-            <div class="recent-info">
-                <div class="recent-name">Alex Johnson</div>
-                <div class="recent-text">Are we meeting tomorrow?</div>
-                <div class="recent-time">10:30 AM</div>
+        @if (recentConversations != null && recentConversations.Any())
+        {
+            @foreach (var conversation in recentConversations)
+            {
+                <a asp-controller="Chat" asp-action="Conversation" asp-route-id="@conversation.ConversationId" 
+                   class="recent-item" style="text-decoration: none; color: inherit; display: flex; align-items: center; padding: 1rem; border-radius: 8px; transition: background 0.2s; margin-bottom: 0.5rem; cursor: pointer;">
+                    <img src="@conversation.AvatarUrl" alt="@conversation.Name" class="recent-avatar" 
+                         style="width: 50px; height: 50px; border-radius: 50%; margin-right: 1rem;">
+                    <div class="recent-info" style="flex: 1;">
+                        <div class="recent-name" style="font-weight: 600; margin-bottom: 0.25rem;">
+                            @conversation.Name
+                            @if (conversation.IsOnline)
+                            {
+                                <span style="color: #10b981; font-size: 0.75rem;">● Online</span>
+                            }
+                        </div>
+                        <div class="recent-text" style="color: #666; font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            @conversation.LastMessage
+                        </div>
+                        <div class="recent-time" style="color: #999; font-size: 0.75rem; margin-top: 0.25rem;">
+                            @conversation.TimeAgo
+                        </div>
+                    </div>
+                    @if (conversation.UnreadCount > 0)
+                    {
+                        <span class="unread-badge" style="background: #667eea; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                            @conversation.UnreadCount
+                        </span>
+                    }
+                </a>
+            }
+        }
+        else
+        {
+            <div style="text-align: center; padding: 2rem; color: #999;">
+                <i class="bi bi-chat-dots" style="font-size: 3rem; margin-bottom: 1rem; display: block;"></i>
+                <p>No recent conversations. Start chatting!</p>
+                <a asp-controller="Chat" asp-action="NewPrivate" class="btn btn-nav" style="margin-top: 1rem; display: inline-block;">
+                    <i class="bi bi-chat-plus"></i> Start a Chat
+                </a>
             </div>
-            <span class="unread-badge">3</span>
-        </div>
-
-        <div class="recent-item">
-            <img src="https://via.placeholder.com/50" alt="Sarah" class="recent-avatar">
-            <div class="recent-info">
-                <div class="recent-name">Sarah Miller</div>
-                <div class="recent-text">Thanks for your help!</div>
-                <div class="recent-time">Yesterday</div>
-            </div>
-        </div>
+        }
     </div>
 
-    <!-- Simple Call to Action -->
-    <div class="dashboard-header" style="text-align: center;">
+    <!-- Help Section -->
+    <div class="dashboard-header" style="text-align: center; margin-top: 2rem;">
         <h3 class="welcome-message" style="font-size: 1.5rem;">Need Help?</h3>
         <p class="welcome-subtitle">Check out our guide or contact support</p>
         <div style="margin-top: 1.5rem;">
@@ -117,31 +142,10 @@
     </div>
 </div>
 
-<div id="chat">
-    <input id="messageInput" placeholder="Enter message..." />
-    <button onclick="sendMessage()">Send</button>
-    <ul id="messagesList"></ul>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-<script>
-    const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/chatHub")
-        .build();
-
-    connection.start().then(() => console.log("Connected to chatHub"));
-
-    connection.on("ReceiveMessage", (user, message) => {
-        const li = document.createElement("li");
-        li.textContent = `${user}: ${message}`;
-        document.getElementById("messagesList").appendChild(li);
-    });
-
-    function sendMessage() {
-    const msg = document.getElementById("messageInput").value;
-    const conversationId = 1; 
-    connection.invoke("SendMessage", conversationId, msg);
-    document.getElementById("messageInput").value = "";
-    }
-
-</script>
+@section Scripts {
+    <style>
+        .recent-item:hover {
+            background: #f9f9ff;
+        }
+    </style>
+}
