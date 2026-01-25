@@ -1,1 +1,109 @@
-coucou!!!
+@{
+    ViewData["Title"] = "ChatApp - Beautiful Messaging";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
+}
+
+<div class="landing-container">
+    
+    <section class="hero-section">
+        <div class="hero-logo">
+            <i class="bi bi-chat-dots-fill"></i>
+            <span>ChatApp</span>
+        </div>
+
+        <h1 class="hero-title">Beautiful conversations,<br>simplified.</h1>
+
+        <p class="hero-subtitle">
+            Experience messaging that feels right. Clean design, thoughtful features,
+            and everything you need to stay connected with the people who matter.
+        </p>
+
+        <div class="hero-buttons">
+            <a asp-controller="Account" asp-action="Register" class="btn btn-nav" style="padding: 1rem 2.5rem;">
+                <i class="bi bi-rocket-takeoff me-2"></i> Get Started Free
+            </a>
+            <a asp-controller="Account" asp-action="Login" class="btn btn-nav-outline" style="padding: 1rem 2.5rem;">
+                <i class="bi bi-box-arrow-in-right me-2"></i> Sign In
+            </a>
+        </div>
+    </section>
+
+   
+    <section class="features-section">
+        <div class="section-title">
+            <h2>Designed for connection</h2>
+            <p>Everything you love about messaging, made better.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="bi bi-chat-square-dots feature-icon"></i>
+                </div>
+                <h3>Clean Conversations</h3>
+                <p>
+                    Focus on what matters with a distraction-free interface
+                    that puts your conversations front and center.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="bi bi-shield-check feature-icon"></i>
+                </div>
+                <h3>Privacy First</h3>
+                <p>
+                    Your conversations are yours alone. We believe in keeping
+                    your messages private and secure by design.
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon-wrapper">
+                    <i class="bi bi-lightning-charge feature-icon"></i>
+                </div>
+                <h3>Lightning Fast</h3>
+                <p>
+                    Instant message delivery that feels seamless. No waiting,
+                    just smooth, real-time conversation.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2 class="cta-title">Ready to connect better?</h2>
+            <p class="cta-subtitle">
+                Join a community that values meaningful conversations over
+                endless notifications and clutter.
+            </p>
+
+            <div class="cta-buttons">
+                <a asp-controller="Account" asp-action="Register" class="cta-button">
+                    <i class="bi bi-person-plus"></i> Create Your Account
+                </a>
+                <a asp-controller="Account" asp-action="Login" class="cta-button outline">
+                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="landing-footer">
+        <div class="footer-links">
+            <a asp-controller="Home" asp-action="About" class="footer-link">About</a>
+            <a href="#" class="footer-link">Privacy</a>
+            <a href="#" class="footer-link">Terms</a>
+            <a href="#" class="footer-link">Help</a>
+            <a href="#" class="footer-link">Contact</a>
+        </div>
+
+        <p class="copyright">
+            &copy; @DateTime.Now.Year ChatApp. Made with <i class="bi bi-heart-fill" style="color: #ff6b6b;"></i>
+        </p>
+    </footer>
+</div>

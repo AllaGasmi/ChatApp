@@ -69,12 +69,12 @@ namespace ChatAppProj.Controllers
             if (result.Succeeded)
             {
 
-                
+
                 await _signInManager.SignInAsync(user, isPersistent: false);
-                return RedirectToAction("Profile");
+                return RedirectToAction("Index", "Home");
             }
 
-            
+
             foreach (var error in result.Errors)
                 ModelState.AddModelError("", error.Description);
 
@@ -110,7 +110,9 @@ namespace ChatAppProj.Controllers
                 lockoutOnFailure: true);
 
             if (result.Succeeded)
-                return RedirectToAction("Profile");
+                user.IsOnline = true;
+                await _userManager.UpdateAsync(user);
+                return RedirectToAction("Index", "Home");
 
             if (result.IsLockedOut)
             {
@@ -119,7 +121,7 @@ namespace ChatAppProj.Controllers
             }
 
             ModelState.AddModelError("", "Invalid login attempt");
-            return View(model); 
+            return View(model);
         }
 
 
@@ -166,6 +168,7 @@ namespace ChatAppProj.Controllers
 
             user.DisplayName = model.DisplayName;
             user.ProfilePicture = model.ProfilePicture;
+            user.Bio = model.Bio;
 
             var result = await _userManager.UpdateAsync(user);
             if (result.Succeeded)
@@ -182,7 +185,8 @@ namespace ChatAppProj.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> Configuration() {
+        public async Task<IActionResult> Configuration()
+        {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
                 return RedirectToAction("Login");
@@ -195,62 +199,127 @@ namespace ChatAppProj.Controllers
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Configuration(UserConfiguration model) {
+        public async Task<IActionResult> Configuration(UserConfiguration model)
+        {
             if (!ModelState.IsValid)
                 return View(model);
 
-            try {
+            try
+            {
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null)
                     return RedirectToAction("Login");
-        
+
                 user = await _userManager.Users
                     .Include(u => u.UserConfiguration)
                     .FirstOrDefaultAsync(u => u.Id == user.Id);
-        
-                if (user.UserConfiguration == null) {
+
+                if (user.UserConfiguration == null)
+                {
                     user.UserConfiguration = new UserConfiguration
                     {
                         AllowRequest = model.AllowRequest,
                         AllowBeingAddedToGroup = model.AllowBeingAddedToGroup,
                         AllowOnlyFriendsChat = model.AllowOnlyFriendsChat
                     };
-                } else {
+                }
+                else
+                {
                     user.UserConfiguration.AllowRequest = model.AllowRequest;
                     user.UserConfiguration.AllowBeingAddedToGroup = model.AllowBeingAddedToGroup;
                     user.UserConfiguration.AllowOnlyFriendsChat = model.AllowOnlyFriendsChat;
                 }
-        
+
                 await _userManager.UpdateAsync(user);
-        
+
                 ViewBag.SuccessMessage = "Your settings have been updated successfully!";
-        
+
                 return View(user.UserConfiguration);
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 ModelState.AddModelError("", $"An error occurred while saving your settings: {ex.Message}");
                 return View(model);
             }
         }
-        
+
         [Authorize]
-        public async Task<IActionResult> Friends() {
+        public async Task<IActionResult> Friends()
+        {
             var currentUser = await _userManager.GetUserAsync(User);
 
             var friends = _friendshipRepository.GetAllFriends(currentUser.Id);
             ViewBag.Friends = friends;
-            
+
             return View();
         }
 
         [Authorize]
         [HttpPost]
-        public async Task<IActionResult> RemoveFriend(int friendId) {
+        public async Task<IActionResult> RemoveFriend(int friendId)
+        {
             var currentUser = await _userManager.GetUserAsync(User);
             var currentUserId = currentUser.Id;
-            
+
             _friendshipService.UnfriendUser(currentUserId, friendId);
 
             return RedirectToAction("Friends");
         }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> ViewProfile(string userId)
+        {
+            try
+            {
+                
+                var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser == null)
+                    return RedirectToAction("Login", "Account");
+
+                if (string.IsNullOrEmpty(userId))
+                    return RedirectToAction("Profile");
+
+                var targetUser = await _userManager.FindByIdAsync(userId);
+                if (targetUser == null)
+                {
+                    TempData["ErrorMessage"] = "User not found.";
+                    return RedirectToAction("Index", "Home");
+                }
+
+                bool isOwnProfile = targetUser.Id == currentUser.Id;
+
+                var pendingRequests =  _friendshipRepository.GetAllPending(currentUser.Id);
+
+                bool hasPendingRequest = pendingRequests.Any(f =>
+                    (f.RequesterId == currentUser.Id && f.AddresseeId == targetUser.Id) ||
+                    (f.RequesterId == targetUser.Id && f.AddresseeId == currentUser.Id));
+
+
+                bool isFriend = _friendshipService.AreFriends(currentUser.Id, targetUser.Id);
+
+
+                var viewModel = new ViewProfileDto
+                {
+                    UserId = targetUser.Id.ToString(),
+                    DisplayName = targetUser.DisplayName ?? targetUser.UserName,
+                    Email = isOwnProfile ? targetUser.Email : null,
+                    ProfilePicture = targetUser.ProfilePicture ?? "https://via.placeholder.com/150",
+                    Bio = targetUser.Bio,
+                    CreatedAt = targetUser.CreatedAt,
+                    Status = targetUser.IsOnline ? "Online" : "Offline",
+                    IsFriend = isFriend,
+                    HasPendingRequest = hasPendingRequest,
+                    CanSendFriendRequest = !isOwnProfile && !isFriend && !hasPendingRequest
+                };
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+        }
+
     }
 }

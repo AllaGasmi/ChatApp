@@ -15,6 +15,7 @@
 @{
     var currentUser = await UserManager.GetUserAsync(User);
     var displayName = currentUser?.DisplayName ?? currentUser?.UserName ?? "User";
+    var Id = currentUser?.Id ?? 0;
     var avatar = currentUser?.ProfilePicture ?? "https://via.placeholder.com/32";
 }
 
@@ -109,10 +110,18 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end user-dropdown" aria-labelledby="userDropdown">
                                 <li>
-                                    <a class="dropdown-item dropdown-item-custom" asp-controller="Account" asp-action="Profile">
+                                    <a class="dropdown-item dropdown-item-custom" asp-controller="Account"
+                                        asp-action="ViewProfile" asp-route-userId="@Id">
+                                        <i class="bi bi-person"></i> View Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-custom" asp-controller="Account"
+                                        asp-action="Profile">
                                         <i class="bi bi-pencil-square"></i> Edit Profile
                                     </a>
                                 </li>
+
                                 <li>
                                     <a class="dropdown-item dropdown-item-custom" asp-controller="Account" asp-action="Configuration">
                                         <i class="bi bi-gear"></i> Settings

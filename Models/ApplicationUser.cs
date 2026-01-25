@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 namespace ChatAppProj.Models;
 public class ApplicationUser : IdentityUser<int>
@@ -8,7 +9,11 @@ public class ApplicationUser : IdentityUser<int>
     public DateTime? LastSeen { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public UserConfiguration UserConfiguration { get; set; } = new UserConfiguration() {
+    [StringLength(500)] 
+    public string? Bio { get; set; }
+
+    public UserConfiguration UserConfiguration { get; set; } = new UserConfiguration()
+    {
         AllowBeingAddedToGroup = true,
         AllowOnlyFriendsChat = false,
         AllowRequest = true

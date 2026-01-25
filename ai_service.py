@@ -39,7 +39,7 @@ class HealthResponse(BaseModel):
     modelsAvailable: List[str]
 
 
-your api key here
+api_key_here
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 
