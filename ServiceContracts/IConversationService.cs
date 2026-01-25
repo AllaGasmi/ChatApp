@@ -15,6 +15,7 @@ public interface IConversationService
     List<RecentConversationDto> GetRecentConversations(int userId, int count = 3);
     void UpdateGroupInfo(int conversationId, int actorId, string? groupName, IFormFile? groupPicture);
     void LeaveGroup(int conversationId, int userId);
+    void DeleteConversation(int conversationId, int userId);
     bool IsAdminOrCreator(int conversationId, int userId);
     void EnsureAiConversation(int userId);
     Conversation? GetPrivateConversation(int user1Id, int user2Id);

@@ -336,13 +336,84 @@ public class ConversationService : IConversationService
 
     public void LeaveGroup(int conversationId, int userId)
     {
-        var participant = _participantRepo.GetParticipant(conversationId, userId)
-            ?? throw new InvalidOperationException("You are not in this conversation.");
+        var conversation = _conversationRepo.GetConversationWithDetails(conversationId);
+        
+        if (conversation == null)
+        {
+            throw new InvalidOperationException("Conversation not found.");
+        }
+        
+        if (conversation.Type != ConversationType.Group)
+        {
+            throw new InvalidOperationException("Can only leave group conversations.");
+        }
+        
+        var participant = _participantRepo.GetParticipant(conversationId, userId);
+        
+        if (participant == null)
+        {
+            throw new InvalidOperationException("You are not in this conversation.");
+        }
 
         if (participant.Role == ConversationRole.Creator)
-            throw new InvalidOperationException("Creator cannot leave the group. Transfer ownership first.");
+        {
+            throw new InvalidOperationException("Creator cannot leave the group. Delete the group instead or transfer ownership first.");
+        }
 
         _participantRepo.Delete(participant);
+    }
+
+    public void DeleteConversation(int conversationId, int userId)
+    {
+        var conversation = _conversationRepo.GetConversationWithDetails(conversationId);
+        
+        if (conversation == null)
+        {
+            throw new InvalidOperationException("Conversation not found.");
+        }
+        
+        if (!_participantRepo.IsUserInConversation(conversationId, userId))
+        {
+            throw new UnauthorizedAccessException("You are not in this conversation.");
+        }
+        
+        if (conversation.Type == ConversationType.Group)
+        {
+            var participant = _participantRepo.GetParticipant(conversationId, userId);
+            
+            if (participant?.Role != ConversationRole.Creator)
+            {
+                throw new UnauthorizedAccessException("Only the creator can delete a group conversation.");
+            }
+            
+            var messages = _messageRepo.GetConversationMessages(conversationId);
+            foreach (var message in messages)
+            {
+                _messageRepo.Delete(message);
+            }
+            
+            foreach (var p in conversation.Participants.ToList())
+            {
+                _participantRepo.Delete(p);
+            }
+            
+            _conversationRepo.Delete(conversation);
+        }
+        else if (conversation.Type == ConversationType.Private)
+        {
+            var messages = _messageRepo.GetConversationMessages(conversationId);
+            foreach (var message in messages)
+            {
+                _messageRepo.Delete(message);
+            }
+            
+            foreach (var p in conversation.Participants.ToList())
+            {
+                _participantRepo.Delete(p);
+            }
+            
+            _conversationRepo.Delete(conversation);
+        }
     }
 
     public void EnsureAiConversation(int userId)
