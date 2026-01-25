@@ -13,18 +13,20 @@ namespace ChatAppProj.Controllers;
 public class ChatController : Controller
 {
     private readonly IConversationService _conversationService;
+    private readonly IFriendshipRepository _friendshipService;
     private readonly IMessageRepository _messageRepository;
     private readonly IConversationRepository _conversationRepository;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IUserRepository _userRepository;
 
-    public ChatController(IConversationService conversationService,IMessageRepository messageRepository,IConversationRepository conversationRepository,UserManager<ApplicationUser> userManager, IUserRepository userRepository)
+    public ChatController(IConversationService conversationService,IMessageRepository messageRepository,IConversationRepository conversationRepository,UserManager<ApplicationUser> userManager, IUserRepository userRepository,IFriendshipRepository friendshipService)
     {
         _conversationService = conversationService;
         _messageRepository = messageRepository;
         _conversationRepository = conversationRepository;
         _userManager = userManager;
         _userRepository = userRepository;
+        _friendshipService=friendshipService;
     }
 
     private int GetCurrentUserId()
@@ -83,11 +85,25 @@ public class ChatController : Controller
 
         return View(conversation);
     }
-    public async Task<IActionResult> NewPrivate() {
+    public async Task<IActionResult> NewPrivate(bool showAll = false)
+    {
         int currentUserId = GetCurrentUserId();
-        var users = _userRepository.GetUsersWhoAllowPrivateChats(currentUserId);
         
-        ViewBag.Users = users.Where(u => u.Id != currentUserId).ToList();
+        List<ApplicationUser> users;
+        
+        if (showAll)
+        {
+            users = _userManager.Users.Where(u => u.Id != currentUserId).ToList();
+        }
+        else
+        {
+            users = _friendshipService.GetAllFriends(currentUserId);
+        }
+        
+        ViewBag.Users = users;
+        ViewBag.ShowAll = showAll;
+        ViewBag.FriendsCount = _friendshipService.GetAllFriends(currentUserId).Count;
+        
         return View();
     }
 
@@ -101,12 +117,25 @@ public class ChatController : Controller
         return RedirectToAction("Conversation", new { id = conversation.Id });
     }
 
-    public async Task<IActionResult> NewGroup()
+    public async Task<IActionResult> NewGroup(bool showAll = false)
     {
-        var users = _userRepository.GetUsersWhoAllowGroupChats();
         int currentUserId = GetCurrentUserId();
         
-        ViewBag.Users = users.Where(u => u.Id != currentUserId).ToList();
+        List<ApplicationUser> users;
+        
+        if (showAll)
+        {
+            users = _userManager.Users.Where(u => u.Id != currentUserId).ToList();
+        }
+        else
+        {
+            users = _friendshipService.GetAllFriends(currentUserId);
+        }
+        
+        ViewBag.Users = users;
+        ViewBag.ShowAll = showAll;
+        ViewBag.FriendsCount = _friendshipService.GetAllFriends(currentUserId).Count;
+        
         return View();
     }
 
@@ -227,7 +256,7 @@ public class ChatController : Controller
         return RedirectToAction("Conversation", new { id = conversationId });
     }
 
-    public async Task<IActionResult> GetAvailableUsers(int conversationId)
+    public async Task<IActionResult> GetAvailableUsers(int conversationId, bool showAll = false)
     {
         int userId = GetCurrentUserId();
         
@@ -239,11 +268,31 @@ public class ChatController : Controller
         var conversation = _conversationRepository.GetConversationWithDetails(conversationId);
         var participantIds = conversation.Participants.Select(p => p.UserId).ToList();
         
-        var availableUsers = _userManager.Users
-            .Where(u => !participantIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.UserName, u.DisplayName, u.IsOnline })
-            .ToList();
+        List<ApplicationUser> availableUsers;
         
-        return Json(availableUsers);
+        if (showAll)
+        {
+            availableUsers = _userManager.Users
+                .Where(u => !participantIds.Contains(u.Id))
+                .ToList();
+        }
+        else
+        {
+            var friends = _friendshipService.GetAllFriends(userId);
+            availableUsers = friends
+                .Where(f => !participantIds.Contains(f.Id))
+                .ToList();
+        }
+        
+        var result = availableUsers.Select(u => new 
+                                            { 
+                                                u.Id, 
+                                                u.UserName, 
+                                                u.DisplayName, 
+                                                u.IsOnline,
+                                                u.ProfilePicture
+                                            }).ToList();
+        
+        return Json(result);
     }
 }

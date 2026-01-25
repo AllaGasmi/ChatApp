@@ -1,12 +1,14 @@
 @{
     ViewData["Title"] = "New Group Chat";
     var users = ViewBag.Users as List<ChatAppProj.Models.ApplicationUser>;
+    var showAll = ViewBag.ShowAll ?? false;
+    var friendsCount = ViewBag.FriendsCount ?? 0;
 }
 
 @section Styles {
     <style>
         .new-group-container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 2rem auto;
             padding: 0 1rem;
         }
@@ -75,63 +77,142 @@
             margin-top: 2rem;
         }
 
+        .users-section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
         .users-section h3 {
             font-size: 1.125rem;
             font-weight: 600;
-            margin-bottom: 1rem;
+            margin: 0;
         }
 
         .selected-count {
             display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: #667eea;
+            padding: 0.375rem 0.875rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border-radius: 12px;
+            border-radius: 20px;
             font-size: 0.875rem;
+            font-weight: 500;
             margin-left: 0.5rem;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .filter-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .toggle-btn {
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            color: #666;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9375rem;
+        }
+
+        .toggle-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
         }
 
         .users-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 0.75rem;
-            max-height: 400px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 0.875rem;
+            max-height: 450px;
             overflow-y: auto;
-            padding: 0.5rem;
+            padding: 1rem;
             border: 2px solid #f0f0f0;
-            border-radius: 8px;
+            border-radius: 12px;
+            background: #fafafa;
         }
 
         .user-checkbox-card {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem;
+            gap: 0.875rem;
+            padding: 0.875rem;
             border: 2px solid #e0e0e0;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s;
+            background: white;
         }
 
         .user-checkbox-card:hover {
-            background: #f9f9ff;
+            background: #f8f9ff;
             border-color: #667eea;
+            transform: translateY(-2px);
         }
 
         .user-checkbox-card.selected {
-            background: #f0f0ff;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
             border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
         }
 
         .user-checkbox {
             width: 20px;
             height: 20px;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .user-mini-avatar {
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
@@ -140,6 +221,25 @@
             color: white;
             font-weight: 600;
             flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-mini-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            border: 2px solid white;
+            position: absolute;
+            bottom: 0;
+            right: 0;
         }
 
         .user-mini-info {
@@ -152,11 +252,23 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            font-size: 0.9375rem;
         }
 
         .user-mini-status {
             font-size: 0.75rem;
             color: #10b981;
+        }
+
+        .friend-badge {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            background: #10b981;
+            color: white;
+            border-radius: 10px;
+            font-size: 0.625rem;
+            font-weight: 500;
+            margin-left: 0.25rem;
         }
 
         .form-actions {
@@ -173,10 +285,14 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
         .btn-create:hover:not(:disabled) {
@@ -194,11 +310,13 @@
             background: white;
             color: #666;
             border: 2px solid #e0e0e0;
-            border-radius: 8px;
+            border-radius: 10px;
             font-weight: 600;
             cursor: pointer;
             text-decoration: none;
             transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
         }
 
         .btn-cancel:hover {
@@ -210,6 +328,27 @@
             font-size: 0.875rem;
             color: #666;
             margin-top: 0.5rem;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+        }
+
+        .select-all-btn {
+            padding: 0.5rem 1rem;
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .select-all-btn:hover {
+            background: #e8e8e8;
         }
     </style>
 }
@@ -238,30 +377,60 @@
         </div>
 
         <div class="users-section">
-            <h3>
-                Add Members
-                <span class="selected-count" id="selectedCount">0 selected</span>
-            </h3>
-            <div class="help-text" style="margin-bottom: 1rem;">
-                Select at least one person to add to the group
+            <div class="users-section-header">
+                <h3>
+                    Add Members
+                    <span class="selected-count" id="selectedCount">0 selected</span>
+                </h3>
+                <button type="button" class="select-all-btn" id="selectAllBtn" onclick="toggleSelectAll()">
+                    <i class="bi bi-check-all"></i> Select All Visible
+                </button>
+            </div>
+
+            <div class="filter-controls">
+                <div class="search-box">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" 
+                           id="userSearch" 
+                           class="search-input" 
+                           placeholder="Search by name..." 
+                           onkeyup="filterUsers()">
+                </div>
+                
+                <div class="filter-toggle">
+                    <a asp-action="NewGroup" asp-route-showAll="false" 
+                       class="toggle-btn @(!showAll ? "active" : "")">
+                        <i class="bi bi-people"></i>
+                        Friends (@friendsCount)
+                    </a>
+                    <a asp-action="NewGroup" asp-route-showAll="true" 
+                       class="toggle-btn @(showAll ? "active" : "")">
+                        <i class="bi bi-globe"></i>
+                        All Users
+                    </a>
+                </div>
             </div>
 
             @if (users.Count == 0)
             {
-                <div style="text-align: center; padding: 2rem; color: #999;">
-                    <i class="bi bi-person-x" style="font-size: 3rem;"></i>
-                    <p>No users available to add to the group</p>
+                <div style="text-align: center; padding: 3rem; color: #999; background: white; border-radius: 12px;">
+                    <i class="bi bi-person-x" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <p>@(showAll ? "No users available" : "No friends to add. Try switching to 'All Users'.")</p>
                 </div>
             }
             else
             {
-                <div class="users-grid">
+                <div class="users-grid" id="usersGrid">
                     @foreach (var user in users)
                     {
                         var initial = user.UserName?.Substring(0, 1).ToUpper() ?? "?";
+                        var displayName = user.DisplayName ?? user.UserName;
                         var isOnline = user.IsOnline;
 
-                        <label class="user-checkbox-card" for="user_@user.Id">
+                        <label class="user-checkbox-card" 
+                               for="user_@user.Id"
+                               data-username="@user.UserName?.ToLower()" 
+                               data-displayname="@displayName?.ToLower()">
                             <input 
                                 type="checkbox" 
                                 id="user_@user.Id" 
@@ -269,9 +438,28 @@
                                 value="@user.Id"
                                 class="user-checkbox"
                                 onchange="updateSelectedCount()">
-                            <div class="user-mini-avatar">@initial</div>
+                            <div class="user-mini-avatar">
+                                @if (!string.IsNullOrEmpty(user.ProfilePicture))
+                                {
+                                    <img src="@user.ProfilePicture" alt="@displayName" />
+                                }
+                                else
+                                {
+                                    <span>@initial</span>
+                                }
+                                @if (isOnline)
+                                {
+                                    <span class="online-dot"></span>
+                                }
+                            </div>
                             <div class="user-mini-info">
-                                <div class="user-mini-name">@user.UserName</div>
+                                <div class="user-mini-name">
+                                    @displayName
+                                    @if (!showAll)
+                                    {
+                                        <span class="friend-badge">Friend</span>
+                                    }
+                                </div>
                                 @if (isOnline)
                                 {
                                     <div class="user-mini-status">● Online</div>
@@ -280,13 +468,20 @@
                         </label>
                     }
                 </div>
+                
+                <div class="no-results" id="noResults" style="display: none;">
+                    <i class="bi bi-search" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                    <p>No users found matching your search</p>
+                </div>
             }
         </div>
 
         <div class="form-actions">
-            <a asp-action="Index" class="btn-cancel">Cancel</a>
+            <a asp-action="Index" class="btn-cancel">
+                <i class="bi bi-x-circle"></i> Cancel
+            </a>
             <button type="submit" class="btn-create" id="createBtn" disabled>
-                <i class="bi bi-people"></i> Create Group
+                <i class="bi bi-people-fill"></i> Create Group
             </button>
         </div>
     </form>
@@ -294,6 +489,8 @@
 
 @section Scripts {
     <script>
+        let allSelected = false;
+
         function updateSelectedCount() {
             const checkboxes = document.querySelectorAll('.user-checkbox:checked');
             const count = checkboxes.length;
@@ -311,6 +508,57 @@
                     card.classList.remove('selected');
                 }
             });
+        }
+
+        function filterUsers() {
+            const searchTerm = document.getElementById('userSearch').value.toLowerCase();
+            const userCards = document.querySelectorAll('.user-checkbox-card');
+            const noResults = document.getElementById('noResults');
+            const usersGrid = document.getElementById('usersGrid');
+            let visibleCount = 0;
+
+            userCards.forEach(card => {
+                const username = card.getAttribute('data-username') || '';
+                const displayname = card.getAttribute('data-displayname') || '';
+                
+                const matches = username.includes(searchTerm) || displayname.includes(searchTerm);
+                
+                if (matches) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0 && searchTerm !== '') {
+                noResults.style.display = 'block';
+                usersGrid.style.display = 'none';
+            } else {
+                noResults.style.display = 'none';
+                usersGrid.style.display = 'grid';
+            }
+        }
+
+        function toggleSelectAll() {
+            const visibleCheckboxes = Array.from(document.querySelectorAll('.user-checkbox-card'))
+                .filter(card => card.style.display !== 'none')
+                .map(card => card.querySelector('.user-checkbox'));
+
+            if (visibleCheckboxes.length === 0) return;
+
+            const allChecked = visibleCheckboxes.every(cb => cb.checked);
+
+            visibleCheckboxes.forEach(checkbox => {
+                checkbox.checked = !allChecked;
+            });
+
+            updateSelectedCount();
+
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            selectAllBtn.innerHTML = allChecked 
+                ? '<i class="bi bi-check-all"></i> Select All Visible'
+                : '<i class="bi bi-x"></i> Deselect All';
         }
 
         document.getElementById('groupForm').addEventListener('submit', function(e) {
