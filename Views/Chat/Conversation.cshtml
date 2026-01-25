@@ -1047,12 +1047,11 @@
         function openEditGroupModal() {
             openModal('editGroupModal');
         }
-        let availableUsers = [];
         let showAllUsers = false;
 
         async function openAddMemberModal() {
             openModal('addMemberModal');
-            await loadAvailableUsers(false); // Load friends by default
+            await loadAvailableUsers(false); 
         }
 
         async function loadAvailableUsers(showAll) {
