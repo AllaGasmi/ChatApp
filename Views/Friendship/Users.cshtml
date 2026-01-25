@@ -1,0 +1,393 @@
+﻿@using ChatAppProj.Models
+@{
+    ViewData["Title"] = "Users";
+    
+    var users = ViewBag.Users as List<ApplicationUser> ?? new List<ApplicationUser>();
+    var searchQuery = ViewBag.SearchQuery as string;
+    var message = TempData["Message"] as string;
+    var messageType = TempData["MessageType"] as string ?? "info";
+}
+
+@section Styles {
+    <style>
+        .users-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .users-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .welcome-message {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .welcome-subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-box {
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .search-input {
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            border: 2px solid #eaeaea;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 50% each line */
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .user-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #eaeaea;
+            transition: all 0.2s ease;
+        }
+
+        .user-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .user-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .user-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 1rem;
+            border: 3px solid #fff;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .user-email {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 0;
+        }
+
+        .user-status {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.85rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            margin-top: 0.5rem;
+        }
+
+        .status-online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-offline {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-online .status-dot {
+            background: #28a745;
+        }
+
+        .status-offline .status-dot {
+            background: #6c757d;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .btn-add {
+            flex: 1;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-add:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-add:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-block {
+            flex: 1;
+            background: #f8f9fa;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-block:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #999;
+            grid-column: 1 / -1;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .user-meta {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+
+        .badge-requests {
+            background: #fff3cd;
+            color: #856404;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+        
+        .action-button {
+            flex: 1;
+        }
+        
+        .alert-container {
+            margin-bottom: 2rem;
+        }
+    </style>
+}
+
+<div class="users-container">
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert-container">
+            <div class="alert alert-@messageType alert-dismissible fade show" role="alert">
+                @Html.Raw(message)
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    }
+
+    <div class="users-header">
+        <h1 class="welcome-message">All Users</h1>
+        <p class="welcome-subtitle">
+            Browse and connect with users. Send friend requests or block users.
+        </p>
+    </div>
+
+    <div class="search-box">
+        <form asp-action="Users" method="get" class="d-flex">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="bi bi-search text-secondary"></i>
+                </span>
+                <input type="text" class="form-control search-input border-start-0" 
+                       name="search" 
+                       value="@searchQuery"
+                       placeholder="Search users by display name...">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-search"></i> Search
+                </button>
+                @if (!string.IsNullOrEmpty(searchQuery))
+                {
+                    <a asp-action="Users" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Clear
+                    </a>
+                }
+            </div>
+        </form>
+    </div>
+
+    <div class="users-grid">
+        @if (users.Any())
+        {
+            @foreach (var user in users)
+            {
+                <div class="user-card">
+                    <div class="user-header">
+                        <img src="@(user.ProfilePicture ?? "https://via.placeholder.com/70")" 
+                             alt="@user.DisplayName" 
+                             class="user-avatar"
+                             onerror="this.src='https://via.placeholder.com/70'">
+                        <div class="user-info">
+                            <h3 class="user-name">
+                                @(user.DisplayName ?? user.UserName)
+                                @if (user.UserConfiguration?.AllowRequest == false)
+                                {
+                                    <span class="badge-requests">
+                                        <i class="bi bi-slash-circle"></i> No Requests
+                                    </span>
+                                }
+                            </h3>
+                            <p class="user-email">@user.Email</p>
+                            <div class="user-status @(user.IsOnline ? "status-online" : "status-offline")">
+                                <span class="status-dot"></span>
+                                @if (user.IsOnline)
+                                {
+                                    <text>Online Now</text>
+                                }
+                                else
+                                {
+                                    @if (user.LastSeen.HasValue)
+                                    {
+                                        <text>Last seen @user.LastSeen?.ToString("g")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Offline</text>
+                                    }
+                                }
+                            </div>
+                            <div class="user-meta">
+                                <i class="bi bi-calendar me-1"></i> Joined @user.CreatedAt.ToString("MMMM yyyy")
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="user-actions">
+                        <div class="action-button">
+                            @if (user.UserConfiguration?.AllowRequest == true)
+                            {
+                                <form asp-controller="Friendship" asp-action="SendRequest" method="post" class="d-inline w-100">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="receiverId" value="@user.Id">
+                                    <button type="submit" class="btn-add w-100">
+                                        <i class="bi bi-person-plus me-2"></i>Send Request
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <button class="btn-add w-100" disabled>
+                                    <i class="bi bi-slash-circle me-2"></i>Requests Disabled
+                                </button>
+                            }
+                        </div>
+                        
+                        <div class="action-button">
+                            <!-- FIXED: Changed userId to blockedId to match your controller -->
+                            <form asp-action="BlockUser" method="post" class="d-inline w-100">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="blockedId" value="@user.Id">
+                                <button type="submit" class="btn-block w-100" 
+                                        onclick="return confirm('Are you sure you want to block @(user.DisplayName ?? user.UserName)?')">
+                                    <i class="bi bi-person-x me-2"></i>Block User
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h3>No users found</h3>
+                <p>
+                    @if (!string.IsNullOrEmpty(searchQuery))
+                    {
+                        <text>No users match your search for "@searchQuery".</text>
+                    }
+                    else
+                    {
+                        <text>There are no other users in the system.</text>
+                    }
+                </p>
+                @if (!string.IsNullOrEmpty(searchQuery))
+                {
+                    <a asp-action="Users" class="btn btn-nav" style="margin-top: 1rem;">
+                        <i class="bi bi-arrow-left me-2"></i>View All Users
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-focus search input if there's a search query
+            const searchInput = document.querySelector('input[name="search"]');
+            if (searchInput && searchInput.value) {
+                searchInput.focus();
+                searchInput.select();
+            }
+            
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+    </script>
+}

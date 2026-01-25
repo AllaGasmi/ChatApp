@@ -241,7 +241,7 @@ public class ConversationService : IConversationService
                 var lastMessage = c.Messages?.OrderByDescending(m => m.SentAt).FirstOrDefault();
 
                 string name;
-                string avatarUrl = "https://via.placeholder.com/50";
+                string avatarUrl;
                 bool isOnline = false;
 
                 if (c.Type == ConversationType.Private)
@@ -249,10 +249,12 @@ public class ConversationService : IConversationService
                     var otherParticipant = c.Participants.FirstOrDefault(p => p.UserId != userId);
                     name = otherParticipant?.User?.UserName ?? "Unknown";
                     isOnline = otherParticipant?.User?.IsOnline ?? false;
+                    avatarUrl = otherParticipant?.User?.ProfilePicture;
                 }
                 else
                 {
                     name = c.Name ?? "Group Chat";
+                    avatarUrl = c.GroupPicture;
                 }
 
                 var timeAgo = lastMessage != null

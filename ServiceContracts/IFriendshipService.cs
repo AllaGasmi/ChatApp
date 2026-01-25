@@ -9,8 +9,9 @@ public interface IFriendshipService {
     BlockUserResponse BlockUser(int blockerId, int blockedId);
     bool UnblockUser(int blockerId, int blockedId);
     bool UnfriendUser(int senderId, int receiverId);
+    void CancelRequest(int requestId);
 }
 
-public enum SendFriendRequestResponse { Ok, AlreadyFriends, AlreadySent, Blocked, Declined }
+public enum SendFriendRequestResponse { Ok, AlreadyFriends, AlreadySent, Blocked, Declined, RequestsDisabled }
 
 public enum BlockUserResponse { Ok, AlreadyBlocked, AlreadyFriends }

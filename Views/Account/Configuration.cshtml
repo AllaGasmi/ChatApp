@@ -1,0 +1,226 @@
+﻿@model ChatAppProj.Models.UserConfiguration
+
+@{
+    ViewData["Title"] = "User Configuration";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/profile.css" />
+    <style>
+        .configuration-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .configuration-header {
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .config-option {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+        
+        .config-option:hover {
+            background: #f1f3f5;
+            transform: translateY(-2px);
+        }
+        
+        .option-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        
+        .option-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+        
+        .option-description {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            margin-bottom: 1rem;
+        }
+        
+        .form-check {
+            padding-left: 2.5rem;
+        }
+        
+        .form-check-input {
+            width: 1.3rem;
+            height: 1.3rem;
+            margin-left: -2.5rem;
+            margin-top: 0.15rem;
+        }
+        
+        .form-check-label {
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .config-actions {
+            border-top: 1px solid #dee2e6;
+            padding-top: 1.5rem;
+            margin-top: 2rem;
+        }
+    </style>
+}
+
+<div class="configuration-container">
+    <div class="configuration-header">
+        <h2 class="mb-2">Privacy & Security Settings</h2>
+        <p class="text-muted">Control how others can interact with you in the chat app</p>
+    </div>
+
+    @if (ViewBag.SuccessMessage != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @ViewBag.SuccessMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <form asp-action="Configuration" method="post" class="config-form">
+        @Html.AntiForgeryToken()
+        
+        <div class="config-option">
+            <div class="option-header">
+                <h3 class="option-title">Friend Requests</h3>
+                <span class="badge bg-info">Recommended</span>
+            </div>
+            <p class="option-description">
+                Control whether other users can send you friend requests. 
+                When disabled, only you can initiate friend connections.
+            </p>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" asp-for="AllowRequest" id="allowRequest">
+                <label class="form-check-label" for="allowRequest">
+                    Allow others to send me friend requests
+                </label>
+            </div>
+        </div>
+
+        <div class="config-option">
+            <div class="option-header">
+                <h3 class="option-title">Group Participation</h3>
+                <span class="badge bg-warning">Important</span>
+            </div>
+            <p class="option-description">
+                Determine whether other users can add you to group chats. 
+                When disabled, users must get your approval before adding you to any group.
+            </p>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" asp-for="AllowBeingAddedToGroup" id="allowGroupAdd">
+                <label class="form-check-label" for="allowGroupAdd">
+                    Allow others to add me to group chats
+                </label>
+            </div>
+        </div>
+
+        <div class="config-option">
+            <div class="option-header">
+                <h3 class="option-title">Chat Restrictions</h3>
+                <span class="badge bg-danger">Privacy</span>
+            </div>
+            <p class="option-description">
+                Restrict who can message you. When enabled, only users on your friends list 
+                can initiate conversations with you.
+            </p>
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" asp-for="AllowOnlyFriendsChat" id="allowFriendsOnly">
+                <label class="form-check-label" for="allowFriendsOnly">
+                    Only allow friends to chat with me
+                </label>
+            </div>
+        </div>
+
+        <div class="config-actions">
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="@Url.Action("Profile", "Account")" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Profile
+                </a>
+                
+                <div>
+                    <button type="reset" class="btn btn-outline-danger me-2">
+                        <i class="bi bi-arrow-clockwise"></i> Reset to Defaults
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Save Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+
+        document.querySelector('button[type="reset"]').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            document.getElementById('allowRequest').checked = true;
+            document.getElementById('allowGroupAdd').checked = true;
+            document.getElementById('allowFriendsOnly').checked = false;
+            
+            showToast('Settings reset to defaults', 'info');
+        });
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0 position-fixed bottom-0 end-0 m-3`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            toast.addEventListener('hidden.bs.toast', function () {
+                document.body.removeChild(toast);
+            });
+        }
+
+        document.querySelector('.config-form').addEventListener('submit', function(e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+            submitBtn.disabled = true;
+            
+            setTimeout(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 2000);
+        });
+    </script>
+}

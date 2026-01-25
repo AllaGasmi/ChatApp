@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using ChatAppProj.Models;
 using ChatAppProj.DTO;
+using ChatAppProj.Repositories;
+using ChatAppProj.RepositoryContracts;
 using ChatAppProj.ServiceContracts;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChatAppProj.Controllers
 {
@@ -14,18 +17,24 @@ namespace ChatAppProj.Controllers
 
         private readonly IFriendshipService _friendshipService;
         private readonly IConversationService _conversationService;
+        private readonly IUserRepository _userRepository;
+        private readonly IFriendshipRepository _friendshipRepository;
 
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             IFriendshipService friendshipService,
-            IConversationService conversationService)
+            IConversationService conversationService,
+            IUserRepository userRepository,
+            IFriendshipRepository friendshipRepository)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _friendshipService = friendshipService;
             _conversationService = conversationService;
+            _userRepository = userRepository;
+            _friendshipRepository = friendshipRepository;
         }
 
 
@@ -101,7 +110,7 @@ namespace ChatAppProj.Controllers
                 lockoutOnFailure: true);
 
             if (result.Succeeded)
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction("Profile");
 
             if (result.IsLockedOut)
             {
@@ -171,6 +180,77 @@ namespace ChatAppProj.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Configuration() {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return RedirectToAction("Login");
+
+            var config = _userRepository.GetUserConfiguration(user.Id);
+
+            return View(config);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Configuration(UserConfiguration model) {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            try {
+                var user = await _userManager.GetUserAsync(User);
+                if (user == null)
+                    return RedirectToAction("Login");
         
+                user = await _userManager.Users
+                    .Include(u => u.UserConfiguration)
+                    .FirstOrDefaultAsync(u => u.Id == user.Id);
+        
+                if (user.UserConfiguration == null) {
+                    user.UserConfiguration = new UserConfiguration
+                    {
+                        AllowRequest = model.AllowRequest,
+                        AllowBeingAddedToGroup = model.AllowBeingAddedToGroup,
+                        AllowOnlyFriendsChat = model.AllowOnlyFriendsChat
+                    };
+                } else {
+                    user.UserConfiguration.AllowRequest = model.AllowRequest;
+                    user.UserConfiguration.AllowBeingAddedToGroup = model.AllowBeingAddedToGroup;
+                    user.UserConfiguration.AllowOnlyFriendsChat = model.AllowOnlyFriendsChat;
+                }
+        
+                await _userManager.UpdateAsync(user);
+        
+                ViewBag.SuccessMessage = "Your settings have been updated successfully!";
+        
+                return View(user.UserConfiguration);
+            } catch (Exception ex) {
+                ModelState.AddModelError("", $"An error occurred while saving your settings: {ex.Message}");
+                return View(model);
+            }
+        }
+        
+        [Authorize]
+        public async Task<IActionResult> Friends() {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            var friends = _friendshipRepository.GetAllFriends(currentUser.Id);
+            ViewBag.Friends = friends;
+            
+            return View();
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> RemoveFriend(int friendId) {
+            var currentUser = await _userManager.GetUserAsync(User);
+            var currentUserId = currentUser.Id;
+            
+            _friendshipService.UnfriendUser(currentUserId, friendId);
+
+            return RedirectToAction("Friends");
+        }
     }
 }

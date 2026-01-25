@@ -1,0 +1,259 @@
+﻿@using ChatAppProj.Models
+@{
+ViewData["Title"] = "Find Friends";
+}
+
+@section Styles {
+<style>
+    .find-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .find-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .welcome-message {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+
+    .welcome-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .users-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .user-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 1px solid #eaeaea;
+        transition: all 0.2s ease;
+    }
+
+    .user-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+    }
+
+    .user-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 1rem;
+        border: 3px solid #fff;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    }
+
+    .user-info {
+        flex: 1;
+    }
+
+    .user-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .user-email {
+        font-size: 0.9rem;
+        color: #666;
+        margin: 0;
+    }
+
+    .user-actions {
+        margin-top: 1rem;
+    }
+
+    .btn-add {
+        width: 100%;
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: background 0.2s ease;
+    }
+
+    .btn-add:hover {
+        background: #5a6fd8;
+    }
+
+    .btn-add:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #999;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .alert-container {
+        margin-bottom: 2rem;
+    }
+
+    .search-box {
+        max-width: 500px;
+        margin: 0 auto 2rem;
+    }
+
+    .search-input {
+        border-radius: 25px;
+        padding: 0.75rem 1.5rem;
+        border: 2px solid #eaeaea;
+    }
+
+    .search-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+</style>
+}
+
+<div class="find-container">
+    @if (ViewBag.Message != null)
+    {
+    <div class="alert-container">
+        <div class="alert alert-@(ViewBag.MessageType ?? "info") alert-dismissible fade show" role="alert">
+            @Html.Raw(ViewBag.Message)
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </div>
+    }
+
+    <div class="find-header">
+        <h1 class="welcome-message">Find Friends</h1>
+        <p class="welcome-subtitle">
+            Connect with people who share your interests. Send friend requests and expand your network.
+        </p>
+    </div>
+
+    <div class="search-box">
+        <div class="input-group">
+            <span class="input-group-text bg-white border-end-0">
+                <i class="bi bi-search text-secondary"></i>
+            </span>
+            <input type="text" class="form-control search-input border-start-0"
+                   placeholder="Search by name or email..."
+                   id="searchInput">
+        </div>
+    </div>
+
+    <div class="users-grid" id="usersGrid">
+        @if (ViewBag.Available != null && ViewBag.Available.Count > 0)
+        {
+        @foreach (ApplicationUser user in ViewBag.Available)
+        {
+        <div class="user-card">
+            <div class="user-header">
+                <img src="@(user.ProfilePicture ?? "https://via.placeholder.com/60")"
+                     alt="@user.DisplayName"
+                     class="user-avatar">
+                <div class="user-info">
+                    <h3 class="user-name">@(user.DisplayName ?? user.UserName)</h3>
+                    <p class="user-email">@user.Email</p>
+                    @if (user.IsOnline)
+                    {
+                    <span style="color: #10b981; font-size: 0.75rem;">● Online</span>
+                    }
+                </div>
+            </div>
+
+            <div class="user-actions">
+                @if (user.UserConfiguration?.AllowRequest == true)
+                {
+                <form asp-action="SendRequest" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="receiverId" value="@user.Id">
+                    <button type="submit" class="btn-add">
+                        <i class="bi bi-person-plus me-2"></i>Add Friend
+                    </button>
+                </form>
+                }
+                else
+                {
+                <button class="btn-add" disabled>
+                    <i class="bi bi-slash-circle me-2"></i>Requests Disabled
+                </button>
+                }
+            </div>
+        </div>
+        }
+        }
+        else
+        {
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h3>No users available</h3>
+            <p>There are no users available to send friend requests to at the moment.</p>
+        </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const userCards = document.querySelectorAll('.user-card');
+
+                userCards.forEach(card => {
+                    const userName = card.querySelector('.user-name').textContent.toLowerCase();
+                    const userEmail = card.querySelector('.user-email').textContent.toLowerCase();
+
+                    if (userName.includes(searchTerm) || userEmail.includes(searchTerm)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Auto-dismiss alerts
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            });
+        }, 5000);
+    });
+</script>
+}

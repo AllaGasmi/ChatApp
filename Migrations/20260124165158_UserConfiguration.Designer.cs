@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ChatAppProj.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260124165158_UserConfiguration")]
+    partial class UserConfiguration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,7 +123,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Conversations", (string)null);
+                    b.ToTable("Conversations");
                 });
 
             modelBuilder.Entity("ChatAppProj.Models.ConversationParticipant", b =>
@@ -147,7 +150,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ConversationParticipants", (string)null);
+                    b.ToTable("ConversationParticipants");
                 });
 
             modelBuilder.Entity("ChatAppProj.Models.Friendship", b =>
@@ -177,7 +180,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasIndex("RequesterId");
 
-                    b.ToTable("Friendships", (string)null);
+                    b.ToTable("Friendships");
                 });
 
             modelBuilder.Entity("ChatAppProj.Models.Message", b =>
@@ -208,7 +211,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("Messages", (string)null);
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("ChatAppProj.Models.UserConfiguration", b =>
@@ -228,7 +231,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserConfiguration", (string)null);
+                    b.ToTable("UserConfiguration");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>

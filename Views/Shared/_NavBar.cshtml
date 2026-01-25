@@ -8,6 +8,16 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/navbar.css" asp-append-version="true" />
 </head>
+
+@using Microsoft.AspNetCore.Identity
+@using ChatAppProj.Models
+@inject UserManager<ApplicationUser> UserManager
+@{
+    var currentUser = await UserManager.GetUserAsync(User);
+    var displayName = currentUser?.DisplayName ?? currentUser?.UserName ?? "User";
+    var avatar = currentUser?.ProfilePicture ?? "https://via.placeholder.com/32";
+}
+
 <body>
     <header>
         <nav class="navbar navbar-expand-lg navbar-custom">
@@ -39,31 +49,78 @@
                                     <i class="bi bi-chat-left-text me-1"></i> Chat
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Friends" ? "active" : "")"
+                                   asp-controller="Account" asp-action="Friends">
+                                    <i class="bi bi-people me-1"></i> Friends
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link nav-link-custom @(ViewContext.RouteData.Values["Action"]?.ToString() == "About" ? "active" : "")"
+                                   asp-controller="Home" asp-action="About">
+                                    <i class="bi bi-info-circle me-1"></i> About Us
+                                </a>
+                            </li>
                         </ul>
 
                         <!-- Search Bar (only for authenticated users) -->
                         <div class="navbar-search mx-lg-3">
-                            <div class="position-relative">
+                            <form asp-controller="Friendship" asp-action="Users" method="get" class="position-relative">
                                 <i class="bi bi-search search-icon"></i>
-                                <input type="text" class="form-control search-input"
-                                       placeholder="Search messages, users...">
-                            </div>
+                                <input type="text" 
+                                       class="form-control search-input" 
+                                       name="search"
+                                       value="@ViewBag.SearchQuery"
+                                       placeholder="Search users by name..."
+                                       style="padding-left: 2.5rem;">
+                            </form>
                         </div>
+                        
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const searchInput = document.getElementById('navbarSearchInput');
+                                const searchForm = document.getElementById('navbarSearchForm');
+                                
+                                if (searchInput) {
+                                    // Auto-submit when user presses Enter
+                                    searchInput.addEventListener('keypress', function(e) {
+                                        if (e.key === 'Enter' && this.value.trim().length > 0) {
+                                            searchForm.submit();
+                                        }
+                                    });
+                                    
+                                    // Focus the input when user clicks the search icon
+                                    document.querySelector('.search-icon').addEventListener('click', function() {
+                                        searchInput.focus();
+                                    });
+                                }
+                            });
+                        </script>
 
                         <!-- User Dropdown Menu -->
                         <div class="dropdown">
                             <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle"
                                id="userDropdown" data-bs-toggle="dropdown">
-                                <img src="@(ViewBag.UserAvatar ?? "https://via.placeholder.com/32")" 
+                                <img src="@avatar" 
                                      alt="User" class="user-avatar">
                                 <span class="d-none d-lg-inline ms-1 text-dark fw-medium">
-                                    @(ViewBag.UserName ?? "User")
+                                    @displayName
                                 </span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end user-dropdown" aria-labelledby="userDropdown">
                                 <li>
                                     <a class="dropdown-item dropdown-item-custom" asp-controller="Account" asp-action="Profile">
                                         <i class="bi bi-pencil-square"></i> Edit Profile
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-custom" asp-controller="Account" asp-action="Configuration">
+                                        <i class="bi bi-gear"></i> Settings
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-custom" asp-controller="Friendship" asp-action="Pending">
+                                        <i class="bi bi-envelope"></i> Requests
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider dropdown-divider-custom"></li>

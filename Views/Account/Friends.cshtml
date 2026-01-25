@@ -1,0 +1,401 @@
+﻿@using ChatAppProj.Models
+@{
+    ViewData["Title"] = "Friends";
+    
+    // Handle null ViewBag safely
+    var friendsList = ViewBag.Friends as IEnumerable<ApplicationUser> ?? new List<ApplicationUser>();
+    var removalSuccess = ViewBag.RemovalSuccess != null && (bool)ViewBag.RemovalSuccess;
+}
+
+@section Styles {
+    <style>
+        .friends-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .friends-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .welcome-message {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .welcome-subtitle {
+            font-size: 1.1rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .friends-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .friends-search {
+            max-width: 500px;
+            margin: 0 auto 2rem;
+        }
+
+        .search-input {
+            border-radius: 25px;
+            padding: 0.75rem 1.5rem;
+            border: 2px solid #eaeaea;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .friends-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .friend-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #eaeaea;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .friend-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        }
+
+        .friend-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .friend-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 1rem;
+            border: 3px solid #fff;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .friend-info {
+            flex: 1;
+        }
+
+        .friend-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 0.25rem 0;
+        }
+
+        .friend-email {
+            font-size: 0.85rem;
+            color: #666;
+            margin: 0;
+        }
+
+        .friend-status {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.85rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            margin-top: 0.5rem;
+        }
+
+        .status-online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-offline {
+            background: #f8f9fa;
+            color: #6c757d;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-online .status-dot {
+            background: #28a745;
+        }
+
+        .status-offline .status-dot {
+            background: #6c757d;
+        }
+
+        .friend-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .btn-chat {
+            flex: 1;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn-chat:hover {
+            background: #5a6fd8;
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-remove {
+            background: #f8f9fa;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-remove:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #999;
+            grid-column: 1 / -1;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert-container {
+            margin-bottom: 2rem;
+        }
+
+        .friends-actions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-refresh {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background 0.2s ease;
+        }
+
+        .btn-refresh:hover {
+            background: #5a6fd8;
+        }
+
+        .friend-meta {
+            font-size: 0.8rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+    </style>
+}
+
+<div class="friends-container">
+    @if (removalSuccess)
+    {
+        <div class="alert-container">
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i> Friend removed successfully.
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    }
+
+    <div class="friends-header">
+        <h1 class="welcome-message">Friends</h1>
+        <p class="welcome-subtitle">
+            Connect and chat with your friends
+        </p>
+    </div>
+
+    <div class="friends-stats">
+        <div class="stat-item">
+            <div class="stat-number">@friendsList.Count()</div>
+            <div class="stat-label">Total Friends</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">@friendsList.Count(f => f.IsOnline)</div>
+            <div class="stat-label">Online Now</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">@friendsList.Count(f => !f.IsOnline)</div>
+            <div class="stat-label">Offline</div>
+        </div>
+    </div>
+
+    <div class="friends-actions-header">
+        <div class="d-flex gap-2">
+            <a asp-controller="Friendship" asp-action="Find" class="btn btn-nav">
+                <i class="bi bi-person-plus me-2"></i>Add Friends
+            </a>
+            <button class="btn-refresh" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+            </button>
+        </div>
+    </div>
+
+    <div class="friends-grid" id="friendsGrid">
+        @if (friendsList.Any())
+        {
+            @foreach (ApplicationUser friend in friendsList)
+            {
+                <div class="friend-card" 
+                     data-friend-name="@friend.DisplayName?.ToLower()"
+                     data-friend-email="@friend.Email?.ToLower()"
+                     data-friend-online="@friend.IsOnline">
+                    <div class="friend-header">
+                        <img src="@(friend.ProfilePicture ?? "https://via.placeholder.com/70")" 
+                             alt="@friend.DisplayName" 
+                             class="friend-avatar">
+                        <div class="friend-info">
+                            <h3 class="friend-name">@(friend.DisplayName ?? friend.UserName)</h3>
+                            <p class="friend-email">@friend.Email</p>
+                            <div class="friend-status @(friend.IsOnline ? "status-online" : "status-offline")">
+                                <span class="status-dot"></span>
+                                @if (friend.IsOnline)
+                                {
+                                    <text>Online</text>
+                                }
+                                else
+                                {
+                                    @if (friend.LastSeen.HasValue)
+                                    {
+                                        <text>Last seen @friend.LastSeen?.ToString("g")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Offline</text>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="friend-actions">
+                        <form asp-action="RemoveFriend" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="friendId" value="@friend.Id">
+                            <button type="submit" class="btn-remove" 
+                                    onclick="return confirm('Are you sure you want to remove @(friend.DisplayName ?? friend.UserName) from your friends?')">
+                                <i class="bi bi-person-dash me-2"></i>Remove
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <h3>No friends yet</h3>
+                <p>Start adding friends to see them here.</p>
+                <a asp-controller="Friendship" asp-action="Find" class="btn btn-nav" style="margin-top: 1rem;">
+                    <i class="bi bi-search me-2"></i>Find Friends
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-dismiss success alert
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+
+            // Status filtering
+            const statusFilter = document.getElementById('statusFilter');
+            if (statusFilter) {
+                statusFilter.addEventListener('change', function() {
+                    const status = this.value;
+                    const friendCards = document.querySelectorAll('.friend-card');
+                    
+                    friendCards.forEach(card => {
+                        const isOnline = card.getAttribute('data-friend-online') === 'True';
+                        
+                        let shouldShow = true;
+                        
+                        if (status === 'online') {
+                            shouldShow = isOnline;
+                        } else if (status === 'offline') {
+                            shouldShow = !isOnline;
+                        }
+                        
+                        card.style.display = shouldShow ? 'block' : 'none';
+                    });
+                });
+            }
+        });
+    </script>
+}

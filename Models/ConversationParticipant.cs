@@ -10,4 +10,4 @@ public class ConversationParticipant
     public DateTime JoinedAt { get; set; }
 }
 
-public enum ConversationRole{Member,Admin,Creator}
+public enum ConversationRole { Member, Admin, Creator }

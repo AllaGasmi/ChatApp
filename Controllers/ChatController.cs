@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using ChatAppProj.ServiceContracts;
 using ChatAppProj.Models;
 using System.Security.Claims;
+using ChatAppProj.Repositories;
 using Microsoft.AspNetCore.Identity;
 using ChatAppProj.RepositoryContracts;
 
@@ -15,13 +16,15 @@ public class ChatController : Controller
     private readonly IMessageRepository _messageRepository;
     private readonly IConversationRepository _conversationRepository;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IUserRepository _userRepository;
 
-    public ChatController(IConversationService conversationService,IMessageRepository messageRepository,IConversationRepository conversationRepository,UserManager<ApplicationUser> userManager)
+    public ChatController(IConversationService conversationService,IMessageRepository messageRepository,IConversationRepository conversationRepository,UserManager<ApplicationUser> userManager, IUserRepository userRepository)
     {
         _conversationService = conversationService;
         _messageRepository = messageRepository;
         _conversationRepository = conversationRepository;
         _userManager = userManager;
+        _userRepository = userRepository;
     }
 
     private int GetCurrentUserId()
@@ -80,10 +83,9 @@ public class ChatController : Controller
 
         return View(conversation);
     }
-    public async Task<IActionResult> NewPrivate()
-    {
-        var users = _userManager.Users.ToList();
+    public async Task<IActionResult> NewPrivate() {
         int currentUserId = GetCurrentUserId();
+        var users = _userRepository.GetUsersWhoAllowPrivateChats(currentUserId);
         
         ViewBag.Users = users.Where(u => u.Id != currentUserId).ToList();
         return View();
@@ -101,7 +103,7 @@ public class ChatController : Controller
 
     public async Task<IActionResult> NewGroup()
     {
-        var users = _userManager.Users.ToList();
+        var users = _userRepository.GetUsersWhoAllowGroupChats();
         int currentUserId = GetCurrentUserId();
         
         ViewBag.Users = users.Where(u => u.Id != currentUserId).ToList();

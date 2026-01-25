@@ -24,11 +24,15 @@ public class FriendshipService : IFriendshipService {
     }
 
     public SendFriendRequestResponse SendFriendRequest(int senderId, int receiverId) {
-        var sender = _userRepository.GetById(receiverId);
-        var receiver = _userRepository.GetById(senderId);
+        var sender = _userRepository.GetById(senderId);
+        var receiver = _userRepository.GetById(receiverId);
 
         if (sender == null || receiver == null) {
             throw new ArgumentException();
+        }
+
+        if (!receiver.UserConfiguration.AllowRequest) {
+            return SendFriendRequestResponse.RequestsDisabled;
         }
 
         var currentFriendship = _friendshipRepository.GetFriendship(senderId, receiverId);
@@ -121,6 +125,8 @@ public class FriendshipService : IFriendshipService {
             };
         
             _friendshipRepository.Create(request);
+        } else if (currentFriendship.Status == FriendshipStatus.Blocked) {
+            return BlockUserResponse.AlreadyBlocked;
         } else {
             currentFriendship.Status = FriendshipStatus.Blocked;
             currentFriendship.RespondedAt = DateTime.Now;
@@ -172,5 +178,15 @@ public class FriendshipService : IFriendshipService {
         }
         
         return false;
+    }
+
+    public void CancelRequest(int requestId) {
+        var request = _friendshipRepository.GetById(requestId);
+
+        if (request == null) {
+            throw new ArgumentException();
+        }
+        
+        _friendshipRepository.Delete(request);
     }
 }

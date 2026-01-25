@@ -82,6 +82,8 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader());
 });
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
 // Repositories
@@ -89,15 +91,12 @@ builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
 builder.Services.AddScoped<IFriendshipRepository, FriendshipRepository>();
 builder.Services.AddScoped<IConversationParticipantRepository, ConversationParticipantRepository>();
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Services
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
-builder.Services.AddHttpClient<IAIService, AiService>();
-
-
-// builder.Services.AddEndpointsApiExplorer();
-// builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IAIService, AiService>();
 
 var app = builder.Build();
 
@@ -114,13 +113,13 @@ using (var scope = app.Services.CreateScope())
             UserName = SystemUsers.AiUserName,
             Email = SystemUsers.AiEmail,
             DisplayName = SystemUsers.AiDisplayName,
+            ProfilePicture = SystemUsers.AiProfilePicture,
             CreatedAt = DateTime.UtcNow,
             IsOnline = true
         };
         await userManager.CreateAsync(aiUser, "AI_Not_Used_123!");
     }
 }
-
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
