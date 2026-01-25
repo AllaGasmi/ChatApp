@@ -7,4 +7,5 @@ public interface IConversationRepository : IGenericRepository<Conversation>
     Conversation? GetConversationWithDetails(int conversationId);
     int GetActiveConversationsCount(int userId);
     List<Conversation> GetAllWithParticipants();
+    public Conversation? GetPrivateConversation(int user1Id, int user2Id);
 }

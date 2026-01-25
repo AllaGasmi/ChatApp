@@ -10,6 +10,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<int>
     
     public DbSet<Friendship> Friendships { get; set; }
     public DbSet<Conversation> Conversations { get; set; }
+    public DbSet<ConversationRequest> ConversationRequests { get; set; }
     public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
     public DbSet<Message> Messages { get; set; }
     

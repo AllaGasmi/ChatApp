@@ -17,6 +17,7 @@ public interface IConversationService
     void LeaveGroup(int conversationId, int userId);
     bool IsAdminOrCreator(int conversationId, int userId);
     void EnsureAiConversation(int userId);
+    Conversation? GetPrivateConversation(int user1Id, int user2Id);
 
 
 }

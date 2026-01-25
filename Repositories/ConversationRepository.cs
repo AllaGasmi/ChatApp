@@ -50,6 +50,18 @@ public class ConversationRepository
             .ThenInclude(p => p.User)
             .ToList();
     }
+    public Conversation? GetPrivateConversation(int user1Id, int user2Id)
+    {
+        return _context.Conversations
+            .Include(c => c.Participants)
+            .ThenInclude(p => p.User)
+            .Where(c => c.Type == ConversationType.Private)
+            .AsEnumerable() 
+            .FirstOrDefault(c => 
+                c.Participants.Count == 2 &&
+                c.Participants.Any(p => p.UserId == user1Id) &&
+                c.Participants.Any(p => p.UserId == user2Id));
+    }
 
     
 }

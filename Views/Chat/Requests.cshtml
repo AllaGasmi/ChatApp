@@ -1,0 +1,447 @@
+@using ChatAppProj.Models
+@{
+    ViewData["Title"] = "Conversation Requests";
+    var pendingRequests = ViewBag.PendingRequests as List<ConversationRequest>;
+    var sentRequests = ViewBag.SentRequests as List<ConversationRequest>;
+}
+
+@section Styles {
+    <style>
+        .requests-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #667eea;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            color: #764ba2;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .request-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .request-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .request-info {
+            flex: 1;
+        }
+
+        .request-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .request-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+        }
+
+        .request-time {
+            color: #999;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .request-message {
+            color: #666;
+            font-size: 0.9375rem;
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-action {
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-accept {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-accept:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-decline {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .btn-decline:hover {
+            background: #e8e8e8;
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+    </style>
+}
+
+<div class="requests-container">
+    @Html.AntiForgeryToken()
+    
+    <a asp-action="Index" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to Conversations
+    </a>
+
+    <div class="page-header">
+        <h1>Conversation Requests</h1>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle"></i>
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-error">
+            <i class="bi bi-exclamation-circle"></i>
+            @TempData["Error"]
+        </div>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            @TempData["Info"]
+        </div>
+    }
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('received')">
+            Received (@pendingRequests.Count)
+        </button>
+        <button class="tab" onclick="switchTab('sent')">
+            Sent (@sentRequests.Count)
+        </button>
+    </div>
+
+    <div id="received" class="tab-content active">
+        @if (pendingRequests.Count == 0)
+        {
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <h2>No Pending Requests</h2>
+                <p>You don't have any conversation requests at the moment.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var request in pendingRequests)
+            {
+                var initial = request.Requester.UserName?.Substring(0, 1).ToUpper() ?? "?";
+                var name = request.Requester.DisplayName ?? request.Requester.UserName;
+                var timeAgo = GetTimeAgo(request.RequestedAt);
+
+                <div class="request-card">
+                    <div class="request-avatar">@initial</div>
+                    <div class="request-info">
+                        <div class="request-name">@name</div>
+                        <div>
+                            <span class="request-type">
+                                @(request.ConversationType == ConversationType.Private ? "Private Chat" : $"Group: {request.GroupName}")
+                            </span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(request.Message))
+                        {
+                            <div class="request-message">"@request.Message"</div>
+                        }
+                        <div class="request-time">
+                            <i class="bi bi-clock"></i> @timeAgo
+                        </div>
+                    </div>
+                    <div class="request-actions">
+                        <form asp-action="AcceptRequest" method="post" style="display: inline;">
+                            <input type="hidden" name="requestId" value="@request.Id" />
+                            <button type="submit" class="btn-action btn-accept">
+                                <i class="bi bi-check-lg"></i> Accept
+                            </button>
+                        </form>
+                        <form asp-action="DeclineRequest" method="post" style="display: inline;">
+                            <input type="hidden" name="requestId" value="@request.Id" />
+                            <button type="submit" class="btn-action btn-decline">
+                                <i class="bi bi-x-lg"></i> Decline
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div id="sent" class="tab-content">
+        @if (sentRequests.Count == 0)
+        {
+            <div class="empty-state">
+                <i class="bi bi-send"></i>
+                <h2>No Sent Requests</h2>
+                <p>You haven't sent any conversation requests.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var request in sentRequests)
+            {
+                var initial = request.Receiver.UserName?.Substring(0, 1).ToUpper() ?? "?";
+                var name = request.Receiver.DisplayName ?? request.Receiver.UserName;
+                var timeAgo = GetTimeAgo(request.RequestedAt);
+
+                <div class="request-card">
+                    <div class="request-avatar">@initial</div>
+                    <div class="request-info">
+                        <div class="request-name">@name</div>
+                        <div>
+                            <span class="request-type">
+                                @(request.ConversationType == ConversationType.Private ? "Private Chat" : $"Group: {request.GroupName}")
+                            </span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(request.Message))
+                        {
+                            <div class="request-message">"@request.Message"</div>
+                        }
+                        <div class="request-time">
+                            <i class="bi bi-clock"></i> Sent @timeAgo
+                        </div>
+                    </div>
+                    <div class="request-actions">
+                        <form asp-action="CancelRequest" method="post" style="display: inline;">
+                            <input type="hidden" name="requestId" value="@request.Id" />
+                            <button type="submit" class="btn-action btn-cancel">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        connection.start().then(() => {
+            console.log("Connected to SignalR");
+        }).catch(err => console.error(err));
+
+        connection.on("ReceiveConversationRequest", (request) => {
+            showNotification(`New ${request.ConversationType === 0 ? 'Private Chat' : 'Group'} Request`,
+                `${request.RequesterName} wants to start a conversation with you.`,
+                `/Chat/Requests`);
+        });
+
+        connection.on("RequestAccepted", (response) => {
+            showNotification("Request Accepted",
+                `${response.ReceiverName} accepted your conversation request.`,
+                `/Chat/Conversation/${response.ConversationId}`);
+        });
+
+        connection.on("RequestDeclined", (response) => {
+            showNotification("Request Declined",
+                `${response.ReceiverName} declined your conversation request.`);
+        });
+
+        function showNotification(title, message, url = null) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                const notification = new Notification(title, {
+                    body: message,
+                    icon: "/favicon.ico"
+                });
+                
+                if (url) {
+                    notification.onclick = () => {
+                        window.location.href = url;
+                        window.focus();
+                    };
+                }
+            } else {
+                const notificationEl = document.createElement('div');
+                notificationEl.className = 'toast-notification';
+                notificationEl.innerHTML = `
+                    <strong>${title}</strong>
+                    <p>${message}</p>
+                    ${url ? `<a href="${url}" class="btn btn-sm btn-primary">View</a>` : ''}
+                `;
+                document.body.appendChild(notificationEl);
+                
+                setTimeout(() => notificationEl.remove(), 5000);
+            }
+        }
+
+        if ("Notification" in window && Notification.permission === "default") {
+            Notification.requestPermission();
+        }
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+    </script>
+}
+
+@functions {
+    string GetTimeAgo(DateTime dateTime)
+    {
+        var timeSpan = DateTime.UtcNow - dateTime;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "just now";
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays}d ago";
+        
+        return dateTime.ToString("MMM dd");
+    }
+}

@@ -97,6 +97,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IConversationService, ConversationService>();
 builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 builder.Services.AddScoped<IAIService, AiService>();
+builder.Services.AddScoped<IConversationRequestRepository, ConversationRequestRepository>();
+builder.Services.AddScoped<IConversationRequestService, ConversationRequestService>();
 
 var app = builder.Build();
 

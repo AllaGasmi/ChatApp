@@ -383,6 +383,10 @@ public class ConversationService : IConversationService
             _conversationRepo.Create(conversation);
         }
     }
+    public Conversation? GetPrivateConversation(int user1Id, int user2Id)
+    {
+        return _conversationRepo.GetPrivateConversation(user1Id,user2Id);
+    }
 
     // public List<MessageDto> SendMessage(int conversationId, int senderId, string content)
     // {
