@@ -32,9 +32,21 @@
 
         <!-- Action Buttons -->
         <div class="actions-elegant">
-            @if (Model.CanSendFriendRequest)
+            @if (Model.HasBlocked) {
+                <form asp-controller="Friendship" asp-action="UnblockUser" asp-route-blockedId="@Model.UserId" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="targetUserId" value="@Model.UserId"/>
+                    <button type="submit" class="btn-elegant primary" style="background: #ff2222">
+                        <i class="bi bi-eye-slash"></i> Unblock
+                    </button>
+                </form>
+            } else if (Model.IsBlocked) {
+                <button class="btn-elegant bg-danger" disabled>
+                    <i class="bi bi-sign-stop"></i> Blocked
+                </button>
+            } else if (Model.CanSendFriendRequest)
             {
-                <form asp-controller="Friends" asp-action="SendRequest" method="post" class="d-inline">
+                <form asp-controller="Friendship" asp-action="SendRequest" asp-route-receiverId="@Model.UserId" method="post" class="d-inline">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="targetUserId" value="@Model.UserId" />
                     <button type="submit" class="btn-elegant primary">
@@ -57,10 +69,11 @@
             
             @if (!isOwnProfile)
             {
-                <a asp-controller="Chat" asp-action="StartChat" asp-route-userId="@Model.UserId" 
-                   class="btn-elegant secondary">
-                    <i class="bi bi-chat"></i> Message
-                </a>
+                @if (!Model.IsBlocked && !Model.HasBlocked) {
+                    <a asp-controller="Chat" asp-action="NewPrivate" class="btn-elegant secondary">
+                        <i class="bi bi-chat"></i> Message
+                    </a>
+                }
             }
             else
             {

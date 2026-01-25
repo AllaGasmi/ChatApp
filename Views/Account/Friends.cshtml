@@ -301,6 +301,7 @@
         {
             @foreach (ApplicationUser friend in friendsList)
             {
+            <a asp-controller="Account" asp-action="ViewProfile" asp-route-userId="@friend.Id" style="text-decoration: none;">
                 <div class="friend-card" 
                      data-friend-name="@friend.DisplayName?.ToLower()"
                      data-friend-email="@friend.Email?.ToLower()"
@@ -332,7 +333,7 @@
                             </div>
                         </div>
                     </div>
-                    
+                        
                     <div class="friend-actions">
                         <form asp-action="RemoveFriend" method="post" class="d-inline">
                             @Html.AntiForgeryToken()
@@ -344,6 +345,7 @@
                         </form>
                     </div>
                 </div>
+            </a>
             }
         }
         else

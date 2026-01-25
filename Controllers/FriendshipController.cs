@@ -180,4 +180,19 @@ public class FriendshipController : Controller {
         
         return RedirectToAction("Users");
     }
+
+    public IActionResult UnblockUser(int blockedId) {
+        int userId = GetCurrentUserId();
+        var blocked = _userRepository.GetById(blockedId);
+
+        if (_friendshipService.UnblockUser(userId, blockedId)) {
+            TempData["Message"] = blocked.DisplayName + " has been unblocked.";
+            TempData["MessageType"] = "success";
+        } else {
+            TempData["Message"] = blocked.DisplayName + " has not been blocked.";
+            TempData["MessageType"] = "danger";
+        }
+        
+        return RedirectToAction("Users");
+    }
 }

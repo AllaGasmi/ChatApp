@@ -127,7 +127,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Conversations");
+                    b.ToTable("Conversations", (string)null);
                 });
 
             modelBuilder.Entity("ChatAppProj.Models.ConversationParticipant", b =>
@@ -154,7 +154,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ConversationParticipants");
+                    b.ToTable("ConversationParticipants", (string)null);
                 });
 
             modelBuilder.Entity("ChatAppProj.Models.ConversationRequest", b =>
@@ -196,7 +196,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasIndex("RequesterId");
 
-                    b.ToTable("ConversationRequests");
+                    b.ToTable("ConversationRequests", (string)null);
                 });
 
             modelBuilder.Entity("ChatAppProj.Models.Friendship", b =>
@@ -226,7 +226,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasIndex("RequesterId");
 
-                    b.ToTable("Friendships");
+                    b.ToTable("Friendships", (string)null);
                 });
 
             modelBuilder.Entity("ChatAppProj.Models.Message", b =>
@@ -257,7 +257,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasIndex("SenderId");
 
-                    b.ToTable("Messages");
+                    b.ToTable("Messages", (string)null);
                 });
 
             modelBuilder.Entity("ChatAppProj.Models.UserConfiguration", b =>
@@ -277,7 +277,7 @@ namespace ChatAppProj.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserConfiguration");
+                    b.ToTable("UserConfiguration", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>

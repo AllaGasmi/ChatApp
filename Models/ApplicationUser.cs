@@ -18,6 +18,7 @@ public class ApplicationUser : IdentityUser<int>
         AllowOnlyFriendsChat = false,
         AllowRequest = true
     };
+    public int UserConfigurationId { get; set; }
     public ICollection<Friendship> SentFriendRequests { get; set; }
     public ICollection<Friendship> ReceivedFriendRequests { get; set; }
     public ICollection<Message> Messages { get; set; }

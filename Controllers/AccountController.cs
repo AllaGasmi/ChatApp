@@ -297,7 +297,8 @@ namespace ChatAppProj.Controllers
 
 
                 bool isFriend = _friendshipService.AreFriends(currentUser.Id, targetUser.Id);
-
+                bool hasBlocked = _friendshipService.HasBlocked(currentUser.Id, targetUser.Id);
+                bool isBlocked = _friendshipService.HasBeenBlockedBy(currentUser.Id, targetUser.Id);
 
                 var viewModel = new ViewProfileDto
                 {
@@ -309,6 +310,8 @@ namespace ChatAppProj.Controllers
                     CreatedAt = targetUser.CreatedAt,
                     Status = targetUser.IsOnline ? "Online" : "Offline",
                     IsFriend = isFriend,
+                    HasBlocked = hasBlocked,
+                    IsBlocked = isBlocked,
                     HasPendingRequest = hasPendingRequest,
                     CanSendFriendRequest = !isOwnProfile && !isFriend && !hasPendingRequest
                 };

@@ -266,80 +266,82 @@
         {
             @foreach (var user in users)
             {
-                <div class="user-card">
-                    <div class="user-header">
-                        <img src="@(user.ProfilePicture ?? "https://via.placeholder.com/70")" 
-                             alt="@user.DisplayName" 
-                             class="user-avatar"
-                             onerror="this.src='https://via.placeholder.com/70'">
-                        <div class="user-info">
-                            <h3 class="user-name">
-                                @(user.DisplayName ?? user.UserName)
-                                @if (user.UserConfiguration?.AllowRequest == false)
-                                {
-                                    <span class="badge-requests">
-                                        <i class="bi bi-slash-circle"></i> No Requests
-                                    </span>
-                                }
-                            </h3>
-                            <p class="user-email">@user.Email</p>
-                            <div class="user-status @(user.IsOnline ? "status-online" : "status-offline")">
-                                <span class="status-dot"></span>
-                                @if (user.IsOnline)
-                                {
-                                    <text>Online Now</text>
-                                }
-                                else
-                                {
-                                    @if (user.LastSeen.HasValue)
+                <a asp-controller="Account" asp-action="ViewProfile" asp-route-userId="@user.Id" style="text-decoration: none;">
+                    <div class="user-card">
+                        <div class="user-header">
+                            <img src="@(user.ProfilePicture ?? "https://via.placeholder.com/70")" 
+                                 alt="@user.DisplayName" 
+                                 class="user-avatar"
+                                 onerror="this.src='https://via.placeholder.com/70'">
+                            <div class="user-info">
+                                <h3 class="user-name">
+                                    @(user.DisplayName ?? user.UserName)
+                                    @if (user.UserConfiguration?.AllowRequest == false)
                                     {
-                                        <text>Last seen @user.LastSeen?.ToString("g")</text>
+                                        <span class="badge-requests">
+                                            <i class="bi bi-slash-circle"></i> No Requests
+                                        </span>
+                                    }
+                                </h3>
+                                <p class="user-email">@user.Email</p>
+                                <div class="user-status @(user.IsOnline ? "status-online" : "status-offline")">
+                                    <span class="status-dot"></span>
+                                    @if (user.IsOnline)
+                                    {
+                                        <text>Online Now</text>
                                     }
                                     else
                                     {
-                                        <text>Offline</text>
+                                        @if (user.LastSeen.HasValue)
+                                        {
+                                            <text>Last seen @user.LastSeen?.ToString("g")</text>
+                                        }
+                                        else
+                                        {
+                                            <text>Offline</text>
+                                        }
                                     }
-                                }
+                                </div>
+                                <div class="user-meta">
+                                    <i class="bi bi-calendar me-1"></i> Joined @user.CreatedAt.ToString("MMMM yyyy")
+                                </div>
                             </div>
-                            <div class="user-meta">
-                                <i class="bi bi-calendar me-1"></i> Joined @user.CreatedAt.ToString("MMMM yyyy")
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="user-actions">
-                        <div class="action-button">
-                            @if (user.UserConfiguration?.AllowRequest == true)
-                            {
-                                <form asp-controller="Friendship" asp-action="SendRequest" method="post" class="d-inline w-100">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="receiverId" value="@user.Id">
-                                    <button type="submit" class="btn-add w-100">
-                                        <i class="bi bi-person-plus me-2"></i>Send Request
-                                    </button>
-                                </form>
-                            }
-                            else
-                            {
-                                <button class="btn-add w-100" disabled>
-                                    <i class="bi bi-slash-circle me-2"></i>Requests Disabled
-                                </button>
-                            }
                         </div>
                         
-                        <div class="action-button">
-                            <!-- FIXED: Changed userId to blockedId to match your controller -->
-                            <form asp-action="BlockUser" method="post" class="d-inline w-100">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="blockedId" value="@user.Id">
-                                <button type="submit" class="btn-block w-100" 
-                                        onclick="return confirm('Are you sure you want to block @(user.DisplayName ?? user.UserName)?')">
-                                    <i class="bi bi-person-x me-2"></i>Block User
-                                </button>
-                            </form>
+                        <div class="user-actions">
+                            <div class="action-button">
+                                @if (user.UserConfiguration?.AllowRequest == true)
+                                {
+                                    <form asp-controller="Friendship" asp-action="SendRequest" method="post" class="d-inline w-100">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="receiverId" value="@user.Id">
+                                        <button type="submit" class="btn-add w-100">
+                                            <i class="bi bi-person-plus me-2"></i>Send Request
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <button class="btn-add w-100" disabled>
+                                        <i class="bi bi-slash-circle me-2"></i>Requests Disabled
+                                    </button>
+                                }
+                            </div>
+                            
+                            <div class="action-button">
+                                <!-- FIXED: Changed userId to blockedId to match your controller -->
+                                <form asp-action="BlockUser" method="post" class="d-inline w-100">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="blockedId" value="@user.Id">
+                                    <button type="submit" class="btn-block w-100" 
+                                            onclick="return confirm('Are you sure you want to block @(user.DisplayName ?? user.UserName)?')">
+                                        <i class="bi bi-person-x me-2"></i>Block User
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </a>
             }
         }
         else

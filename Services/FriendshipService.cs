@@ -23,6 +23,26 @@ public class FriendshipService : IFriendshipService {
         return currentFriendship.Status == FriendshipStatus.Accepted;
     }
 
+    public bool HasBlocked(int user1Id, int user2Id) {
+        var currentFriendship = _friendshipRepository.GetFriendship(user1Id, user2Id);
+
+        if (currentFriendship == null) {
+            return false;
+        }
+
+        return (currentFriendship.Status == FriendshipStatus.Blocked && currentFriendship.RequesterId == user1Id);
+    }
+
+    public bool HasBeenBlockedBy(int user1Id, int user2Id) {
+        var currentFriendship = _friendshipRepository.GetFriendship(user1Id, user2Id);
+
+        if (currentFriendship == null) {
+            return false;
+        }
+
+        return (currentFriendship.Status == FriendshipStatus.Blocked && currentFriendship.AddresseeId == user1Id);
+    }
+
     public SendFriendRequestResponse SendFriendRequest(int senderId, int receiverId) {
         var sender = _userRepository.GetById(senderId);
         var receiver = _userRepository.GetById(receiverId);

@@ -11,6 +11,8 @@ namespace ChatAppProj.DTO
         public DateTime? UpdatedAt { get; set; }
         public string Status { get; set; }
         public bool IsFriend { get; set; }
+        public bool HasBlocked { get; set; }
+        public bool IsBlocked { get; set; }
         public bool HasPendingRequest { get; set; }
         public bool CanSendFriendRequest { get; set; }
     }
