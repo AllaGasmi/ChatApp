@@ -1,12 +1,18 @@
-﻿@using ChatAppProj.Models
+﻿@using System.Security.Claims
+@using ChatAppProj.Models
+@using ChatAppProj.RepositoryContracts
+@using ChatAppProj.ServiceContracts
 @{
     ViewData["Title"] = "Users";
     
+    var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
     var users = ViewBag.Users as List<ApplicationUser> ?? new List<ApplicationUser>();
     var searchQuery = ViewBag.SearchQuery as string;
     var message = TempData["Message"] as string;
     var messageType = TempData["MessageType"] as string ?? "info";
 }
+
+@inject IFriendshipService _friendshipService;
 
 @section Styles {
     <style>
@@ -309,36 +315,73 @@
                         </div>
                         
                         <div class="user-actions">
-                            <div class="action-button">
-                                @if (user.UserConfiguration?.AllowRequest == true)
-                                {
-                                    <form asp-controller="Friendship" asp-action="SendRequest" method="post" class="d-inline w-100">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="receiverId" value="@user.Id">
-                                        <button type="submit" class="btn-add w-100">
-                                            <i class="bi bi-person-plus me-2"></i>Send Request
-                                        </button>
-                                    </form>
-                                }
-                                else
-                                {
-                                    <button class="btn-add w-100" disabled>
-                                        <i class="bi bi-slash-circle me-2"></i>Requests Disabled
-                                    </button>
-                                }
-                            </div>
+                            @{
+                                bool areFriends = _friendshipService.AreFriends(user.Id, currentUserId);
+                                bool hasBeenBlocked = _friendshipService.HasBeenBlockedBy(user.Id, currentUserId);
+                                bool hasBlocked = _friendshipService.HasBlocked(user.Id, currentUserId);
+                                bool hasRequested = _friendshipService.HasRequested(user.Id, currentUserId);
+                                bool isBlocked = hasBeenBlocked || hasBlocked;
+                                bool canSendRequest = user.UserConfiguration?.AllowRequest == true && !hasRequested;
+                                
+                                bool showFriendButton = !isBlocked;
+                                bool showBlockButton = !areFriends;
+                                
+                                bool showBothButtons = showFriendButton && showBlockButton;
+                                string buttonWidthClass = showBothButtons ? "" : "w-100";
+                            }
                             
-                            <div class="action-button">
-                                <!-- FIXED: Changed userId to blockedId to match your controller -->
-                                <form asp-action="BlockUser" method="post" class="d-inline w-100">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="blockedId" value="@user.Id">
-                                    <button type="submit" class="btn-block w-100" 
-                                            onclick="return confirm('Are you sure you want to block @(user.DisplayName ?? user.UserName)?')">
-                                        <i class="bi bi-person-x me-2"></i>Block User
-                                    </button>
-                                </form>
-                            </div>
+                            @if (showFriendButton) {
+                                <div class="action-button @(showBothButtons ? "me-1" : "mb-2") @buttonWidthClass">
+                                    @if (areFriends) {
+                                        <button class="btn btn-secondary w-100" disabled>
+                                            <i class="bi bi-slash-circle me-2"></i> Friends
+                                        </button>
+                                    }
+                                    else if (hasRequested) {
+                                        <button class="btn btn-info w-100" disabled>
+                                            <i class="bi bi-clock-history me-2"></i>Request Sent
+                                        </button>
+                                    }
+                                    else if (canSendRequest) {
+                                        <form asp-controller="Friendship" asp-action="SendRequest" method="post" class="w-100">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="receiverId" value="@user.Id">
+                                            <button type="submit" class="btn btn-primary w-100">
+                                                <i class="bi bi-person-plus me-2"></i>Send Request
+                                            </button>
+                                        </form>
+                                    } else {
+                                        <button class="btn btn-secondary w-100" disabled>
+                                            <i class="bi bi-slash-circle me-2"></i>Requests Disabled
+                                        </button>
+                                    }
+                                </div>
+                            }
+                            
+                            @if (showBlockButton) {
+                                <div class="action-button @buttonWidthClass">
+                                    @if (hasBeenBlocked)
+                                    {
+                                        <form asp-action="UnblockUser" method="post" class="w-100">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="blockedId" value="@user.Id">
+                                            <button type="submit" class="btn btn-warning w-100"
+                                                    onclick="return confirm('Are you sure you want to unblock @(user.DisplayName ?? user.UserName)?')">
+                                                <i class="bi bi-person-x me-2"></i>Unblock User
+                                            </button>
+                                        </form>
+                                    } else if (!hasBlocked) {
+                                        <form asp-action="BlockUser" method="post" class="w-100">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="blockedId" value="@user.Id">
+                                            <button type="submit" class="btn btn-danger w-100"
+                                                    onclick="return confirm('Are you sure you want to block @(user.DisplayName ?? user.UserName)?')">
+                                                <i class="bi bi-person-x me-2"></i>Block User
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            }
                         </div>
                     </div>
                 </a>

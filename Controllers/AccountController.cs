@@ -48,13 +48,11 @@ namespace ChatAppProj.Controllers
         // POST: /Account/Register
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterDto model)
-        {
+        public async Task<IActionResult> Register(RegisterDto model) {
             if (!ModelState.IsValid)
                 return View(model);
 
-            var user = new ApplicationUser
-            {
+            var user = new ApplicationUser {
                 UserName = model.Email,
                 Email = model.Email,
                 DisplayName = model.DisplayName ?? model.Email.Split('@')[0],
@@ -66,14 +64,27 @@ namespace ChatAppProj.Controllers
 
             var result = await _userManager.CreateAsync(user, model.Password);
 
-            if (result.Succeeded)
-            {
-
-
+            if (result.Succeeded) {
                 await _signInManager.SignInAsync(user, isPersistent: false);
+            
+                var aiUser = await _userManager.FindByEmailAsync(SystemUsers.AiEmail);
+
+                if (aiUser != null) {
+                    var aiFriendship = new Friendship() {
+                        Addressee = user,
+                        AddresseeId = user.Id,
+                        Requester = aiUser,
+                        RequesterId = aiUser.Id,
+                        RequestedAt = DateTime.UtcNow,
+                        RespondedAt = DateTime.UtcNow,
+                        Status = FriendshipStatus.Accepted
+                    };
+                
+                    _friendshipRepository.Create(aiFriendship);
+                }
+                
                 return RedirectToAction("Index", "Home");
             }
-
 
             foreach (var error in result.Errors)
                 ModelState.AddModelError("", error.Description);

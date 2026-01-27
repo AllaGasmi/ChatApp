@@ -4,6 +4,7 @@ public interface IFriendshipService {
     bool AreFriends(int user1Id, int user2Id);
     public bool HasBlocked(int user1Id, int user2Id);
     public bool HasBeenBlockedBy(int user1Id, int user2Id);
+    public bool HasRequested(int user1Id, int user2Id);
     SendFriendRequestResponse SendFriendRequest(int senderId, int receiverId);
     void AcceptRequest(int requestId);
     void DeclineRequest(int requestId);

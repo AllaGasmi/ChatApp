@@ -1,7 +1,12 @@
-﻿@using ChatAppProj.Models
+﻿@using System.Security.Claims
+@using ChatAppProj.Models
+@using ChatAppProj.ServiceContracts
 @{
-ViewData["Title"] = "Find Friends";
+    ViewData["Title"] = "Find Friends";
+
+    var currentUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 }
+@inject IFriendshipService _friendshipService;
 
 @section Styles {
 <style>
@@ -170,60 +175,57 @@ ViewData["Title"] = "Find Friends";
     </div>
 
     <div class="users-grid" id="usersGrid">
-        @if (ViewBag.Available != null && ViewBag.Available.Count > 0)
-        {
-        @foreach (ApplicationUser user in ViewBag.Available)
-        {
-            <a asp-controller="Account" asp-action="ViewProfile" asp-route-userId="@user.Id" style="text-decoration: none;">
-                <div class="user-card">
-                    <div class="user-header">
-                        <img src="@(user.ProfilePicture ?? "https://via.placeholder.com/60")"
-                             alt="@user.DisplayName"
-                             class="user-avatar">
-                        <div class="user-info">
-                            <h3 class="user-name">@(user.DisplayName ?? user.UserName)</h3>
-                            <p class="user-email">@user.Email</p>
-                            @if (user.IsOnline)
-                            {
-                                <span style="color: #10b981; font-size: 0.75rem;">● Online</span>
-                            }
-                            else {
-                                <span style="color: #aaaaaa; font-size: 0.75rem;">● Offline</span>
-                            }
-                        </div>
-                    </div>
+        @if (ViewBag.Available != null && ViewBag.Available.Count > 0) {
+            @foreach (ApplicationUser user in ViewBag.Available) {
+                @if (_friendshipService.HasBlocked(user.Id, currentUserId) || _friendshipService.HasBeenBlockedBy(user.Id, currentUserId)) {
+                    // Doesn't appear
+                } else {
+                    <a asp-controller="Account" asp-action="ViewProfile" asp-route-userId="@user.Id" style="text-decoration: none;">
+                        <div class="user-card">
+                            <div class="user-header">
+                                <img src="@(user.ProfilePicture ?? "https://via.placeholder.com/60")"
+                                     alt="@user.DisplayName"
+                                     class="user-avatar">
+                                <div class="user-info">
+                                    <h3 class="user-name">@(user.DisplayName ?? user.UserName)</h3>
+                                    <p class="user-email">@user.Email</p>
+                                    @if (user.IsOnline) {
+                                        <span style="color: #10b981; font-size: 0.75rem;">● Online</span>
+                                    }
+                                    else {
+                                        <span style="color: #aaaaaa; font-size: 0.75rem;">● Offline</span>
+                                    }
+                                </div>
+                            </div>
 
-                    <div class="user-actions">
-                        @if (user.UserConfiguration?.AllowRequest == true)
-                        {
-                            <form asp-action="SendRequest" method="post">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="receiverId" value="@user.Id">
-                                <button type="submit" class="btn-add">
-                                    <i class="bi bi-person-plus me-2"></i>Add Friend
-                                </button>
-                            </form>
-                        }
-                        else
-                        {
-                            <button class="btn-add" disabled>
-                                <i class="bi bi-slash-circle me-2"></i>Requests Disabled
-                            </button>
-                        }
-                    </div>
+                            <div class="user-actions">
+                                @if (user.UserConfiguration?.AllowRequest == true) {
+                                    <form asp-action="SendRequest" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="receiverId" value="@user.Id">
+                                        <button type="submit" class="btn-add">
+                                            <i class="bi bi-person-plus me-2"></i>Add Friend
+                                        </button>
+                                    </form>
+                                }
+                                else {
+                                    <button class="btn-add" disabled>
+                                        <i class="bi bi-slash-circle me-2"></i>Requests Disabled
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </a>
+                }
+            }
+        } else {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="bi bi-people"></i>
                 </div>
-            </a>
-        }
-        }
-        else
-        {
-        <div class="empty-state">
-            <div class="empty-icon">
-                <i class="bi bi-people"></i>
+                <h3>No users available</h3>
+                <p>There are no users available to send friend requests to at the moment.</p>
             </div>
-            <h3>No users available</h3>
-            <p>There are no users available to send friend requests to at the moment.</p>
-        </div>
         }
     </div>
 </div>
