@@ -195,4 +195,12 @@ public class FriendshipController : Controller {
         
         return RedirectToAction("Users");
     }
+
+    public IActionResult DeleteDeclined() {
+        int userId = GetCurrentUserId();
+        
+        _friendshipService.DeleteDeclined(userId);
+        
+        return RedirectToAction("Pending");
+    }
 }

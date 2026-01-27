@@ -394,6 +394,18 @@
                         </div>
                     }
                 </div>
+                
+                @if (sentRequests.Any()) {
+                    <div class="mt-4 text-end">
+                        <form asp-controller="Friendship" asp-action="DeleteDeclined" method="post" 
+                              onsubmit="return confirmDeleteDeclined()" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash me-2"></i>Delete Denied Requests
+                            </button>
+                        </form>
+                    </div>
+                }
             }
             else
             {
@@ -442,5 +454,9 @@
                 }
             }
         });
+        
+        function confirmDeleteDeclined() {
+            return confirm('Are you sure you want to delete all your declined friend requests? This action cannot be undone.');
+        }
     </script>
 }

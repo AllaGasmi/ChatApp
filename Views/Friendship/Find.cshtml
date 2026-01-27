@@ -112,6 +112,17 @@
         cursor: not-allowed;
     }
 
+    .btn-pending {
+        width: 100%;
+        background: #ad5d9c;
+        color: white;
+        border: none;
+        padding: 0.75rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: background 0.2s ease;
+    }
+
     .empty-state {
         text-align: center;
         padding: 4rem 2rem;
@@ -199,7 +210,7 @@
                             </div>
 
                             <div class="user-actions">
-                                @if (user.UserConfiguration?.AllowRequest == true) {
+                                @if (user.UserConfiguration?.AllowRequest == true && !_friendshipService.HasRequested(user.Id, currentUserId)) {
                                     <form asp-action="SendRequest" method="post">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="receiverId" value="@user.Id">
@@ -208,7 +219,11 @@
                                         </button>
                                     </form>
                                 }
-                                else {
+                                else if (_friendshipService.HasRequested(user.Id, currentUserId)) {
+                                    <button type="submit" class="btn-pending disabled">
+                                        <i class="bi bi-hourglass me-2"></i>Request Pending
+                                    </button>
+                                } else {
                                     <button class="btn-add" disabled>
                                         <i class="bi bi-slash-circle me-2"></i>Requests Disabled
                                     </button>
