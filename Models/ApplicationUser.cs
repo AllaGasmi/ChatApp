@@ -22,4 +22,5 @@ public class ApplicationUser : IdentityUser<int>
     public ICollection<Friendship> SentFriendRequests { get; set; }
     public ICollection<Friendship> ReceivedFriendRequests { get; set; }
     public ICollection<Message> Messages { get; set; }
+    public ICollection<Notification> Notifications { get; set; }
 }

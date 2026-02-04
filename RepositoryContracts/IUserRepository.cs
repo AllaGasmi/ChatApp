@@ -11,4 +11,8 @@ public interface IUserRepository : IGenericRepository<ApplicationUser> {
     void UpdateUserConfiguration(UserConfiguration userConfiguration);
     void setOnline(int userId);
     void setOffline(int userId);
+    List<Notification> GetNotifications(int userId);
+    void RemoveSeen(int userId);
+    void MakeAllSeen(int userId);
+    bool HasUnseen(int userId);
 }

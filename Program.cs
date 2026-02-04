@@ -99,6 +99,7 @@ builder.Services.AddScoped<IFriendshipService, FriendshipService>();
 builder.Services.AddScoped<IAIService, AiService>();
 builder.Services.AddScoped<IConversationRequestRepository, ConversationRequestRepository>();
 builder.Services.AddScoped<IConversationRequestService, ConversationRequestService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 var app = builder.Build();
 

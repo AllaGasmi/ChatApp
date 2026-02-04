@@ -3,4 +3,6 @@ obj/
 appsettings.Development.json
 appsettings.json
 wwwroot/uploads/
-__pycache__/
+AIService/__pycache__/
+AIService/.env
+AIService/venv/

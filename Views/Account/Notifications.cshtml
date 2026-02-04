@@ -1,0 +1,422 @@
+﻿@using ChatAppProj.Models
+@{
+ViewData["Title"] = "Notifications";
+var notifications = ViewBag.Notifs as IEnumerable<Notification> ?? new List<Notification>();
+var unreadCount = notifications.Count(n => !n.IsSeen);
+var hasSeenNotifications = notifications.Any(n => n.IsSeen);
+}
+
+@section Styles {
+<style>
+    .notifications-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .notifications-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+
+    .page-subtitle {
+        font-size: 1.1rem;
+        color: #666;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .notifications-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eaeaea;
+    }
+
+    .badge-unread {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-mark-all {
+        background: #f8f9fa;
+        color: #666;
+        border: 1px solid #dee2e6;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-mark-all:hover {
+        background: #e9ecef;
+        border-color: #ced4da;
+    }
+
+    .btn-mark-seen {
+        background: #28a745;
+        color: white;
+        border: 1px solid #28a745;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-mark-seen:hover {
+        background: #218838;
+        border-color: #1e7e34;
+    }
+
+    .btn-delete-seen {
+        background: #dc3545;
+        color: white;
+        border: 1px solid #dc3545;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-delete-seen:hover {
+        background: #c82333;
+        border-color: #bd2130;
+    }
+
+    .btn-delete-seen:disabled {
+        background: #6c757d;
+        border-color: #6c757d;
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    .notifications-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .notification-item {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid #eaeaea;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .notification-item.unread {
+        border-left: 4px solid #667eea;
+        background: linear-gradient(to right, rgba(102, 126, 234, 0.03), white);
+    }
+
+    .notification-item.seen {
+        border-left: 4px solid #6c757d;
+        opacity: 0.8;
+    }
+
+    .notification-item:hover {
+        border-color: #667eea;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .notification-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .notification-icon.message {
+        background: rgba(102, 126, 234, 0.1);
+        color: #667eea;
+    }
+
+    .notification-icon.friendship-accepted {
+        background: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+    }
+
+    .notification-icon.friendship-denied {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+
+    .notification-icon.friendship-received {
+        background: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+
+    .notification-details {
+        flex: 1;
+    }
+
+    .notification-message {
+        font-size: 1rem;
+        color: #333;
+        margin: 0 0 0.5rem 0;
+        line-height: 1.4;
+    }
+
+    .notification-time {
+        font-size: 0.85rem;
+        color: #999;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .notification-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+
+    .btn-small {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+        background: white;
+        color: #666;
+        transition: all 0.2s ease;
+    }
+
+    .btn-small:hover {
+        background: #f8f9fa;
+    }
+
+    .btn-small.delete {
+        background: #f8d7da;
+        color: #721c24;
+        border-color: #f5c6cb;
+    }
+
+    .btn-small.delete:hover {
+        background: #f1b0b7;
+        border-color: #ed969e;
+    }
+
+    .notification-dot {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #667eea;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #999;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: #dee2e6;
+    }
+
+    .notification-time-icon {
+        font-size: 0.9em;
+    }
+
+    .seen-badge {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: #6c757d;
+        color: white;
+        padding: 0.15rem 0.5rem;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+
+    @@media (max-width: 768px) {
+    .notifications-actions {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .btn-mark-all, .btn-mark-seen, .btn-delete-seen {
+        width: 100%;
+    }
+    }
+</style>
+}
+
+<div class="notifications-container">
+    <div class="notifications-header">
+        <h1 class="page-title">Notifications</h1>
+        <p class="page-subtitle">
+            Stay updated with your latest activities and messages
+        </p>
+    </div>
+
+    <div class="notifications-actions">
+        <div>
+            <span class="badge-unread">
+                @if (unreadCount > 0)
+                {
+                <text>@unreadCount unread notification@(unreadCount != 1 ? "s" : "")</text>
+                }
+                else
+                {
+                <text>All caught up!</text>
+                }
+            </span>
+        </div>
+
+        <div class="action-buttons">
+            @if (unreadCount > 0) {
+                <a asp-controller="Account" asp-action="MarkSeen" class="btn-mark-seen" onclick="return confirm('Mark all notifications as seen?')">
+                    <i class="bi bi-eye me-2"></i>Mark as seen
+                </a>
+            }
+
+            <a asp-controller="Account" asp-action="DeleteSeen" class="btn-delete-seen" onclick="return confirmDeleteSeen()">
+                <i class="bi bi-trash me-2"></i>Delete seen
+            </a>
+        </div>
+    </div>
+
+    <div class="notifications-list">
+        @if (notifications.Any())
+        {
+        @foreach (var notification in notifications)
+        {
+        string iconClass = "";
+        string icon = "";
+
+        switch (notification.Type)
+        {
+        case NotificationType.Message:
+        iconClass = "message";
+        icon = "bi-chat";
+        break;
+        case NotificationType.FriendshipAccepted:
+        iconClass = "friendship-accepted";
+        icon = "bi-person-check";
+        break;
+        case NotificationType.FriendshipDenied:
+        iconClass = "friendship-denied";
+        icon = "bi-person-x";
+        break;
+        case NotificationType.FriendshipReceived:
+        iconClass = "friendship-received";
+        icon = "bi-person-plus";
+        break;
+        case NotificationType.RequestReceived:
+        iconClass = "friendship-received";
+        icon = "bi-broadcast";
+        break;
+        }
+
+        <div class="notification-item @(notification.IsSeen ? "seen" : "unread")">
+            @if (!notification.IsSeen)
+            {
+            <div class="notification-dot"></div>
+            }
+            else
+            {
+            <div class="seen-badge">Seen</div>
+            }
+
+            <div class="notification-content">
+                <div class="notification-icon @iconClass">
+                    <i class="bi @icon"></i>
+                </div>
+
+                <div class="notification-details">
+                    <p class="notification-message">@notification.Message</p>
+
+                    <div class="notification-time">
+                        <i class="bi bi-clock notification-time-icon"></i>
+                        <span>@notification.SentAt.ToString("g")</span>
+                        @if (notification.SentAt.Date == DateTime.Today)
+                        {
+                        <span class="badge bg-light text-dark">Today</span>
+                        }
+                        else if (notification.SentAt.Date == DateTime.Today.AddDays(-1))
+                        {
+                        <span class="badge bg-light text-dark">Yesterday</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        }
+        }
+        else
+        {
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="bi bi-bell"></i>
+            </div>
+            <h3>No notifications</h3>
+            <p>You're all caught up! Check back later for updates.</p>
+        </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function confirmDeleteSeen() {
+        return confirm('Are you sure you want to delete all seen notifications? This action cannot be undone.');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-mark as read when user clicks on notification (optional enhancement)
+        const notificationItems = document.querySelectorAll('.notification-item.unread');
+        notificationItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                // Only trigger if clicking on the notification itself, not on buttons
+                if (!e.target.closest('button') && !e.target.closest('form')) {
+                    const form = this.querySelector('form');
+                    if (form) {
+                        form.submit();
+                    }
+                }
+            });
+        });
+    });
+</script>
+}

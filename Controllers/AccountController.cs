@@ -19,6 +19,7 @@ namespace ChatAppProj.Controllers
         private readonly IConversationService _conversationService;
         private readonly IUserRepository _userRepository;
         private readonly IFriendshipRepository _friendshipRepository;
+        private readonly INotificationService _notificationService;
 
 
         public AccountController(
@@ -27,7 +28,8 @@ namespace ChatAppProj.Controllers
             IFriendshipService friendshipService,
             IConversationService conversationService,
             IUserRepository userRepository,
-            IFriendshipRepository friendshipRepository)
+            IFriendshipRepository friendshipRepository,
+            INotificationService notificationService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -35,6 +37,7 @@ namespace ChatAppProj.Controllers
             _conversationService = conversationService;
             _userRepository = userRepository;
             _friendshipRepository = friendshipRepository;
+            _notificationService = notificationService;
         }
 
 
@@ -120,10 +123,11 @@ namespace ChatAppProj.Controllers
                 model.RememberMe,
                 lockoutOnFailure: true);
 
-            if (result.Succeeded)
-                user.IsOnline = true;
+            if (result.Succeeded) {
+                _userRepository.setOnline(user.Id);
                 await _userManager.UpdateAsync(user);
                 return RedirectToAction("Index", "Home");
+            }
 
             if (result.IsLockedOut)
             {
@@ -140,8 +144,13 @@ namespace ChatAppProj.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
-        public async Task<IActionResult> Logout()
-        {
+        public async Task<IActionResult> Logout() {
+            var user = await _userManager.GetUserAsync(User);
+            _userRepository.setOnline(user.Id);
+            
+            TempData.Clear();
+            ViewData.Clear();
+            
             await _signInManager.SignOutAsync();
             return RedirectToAction("Login");
         }
@@ -335,5 +344,30 @@ namespace ChatAppProj.Controllers
             }
         }
 
+        public async Task<IActionResult> Notifications() {
+            var user = await _userManager.GetUserAsync(User);
+
+            ViewBag.Notifs = _userRepository.GetNotifications(user.Id);
+            
+            return View();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> MarkSeen() {
+            var user = await _userManager.GetUserAsync(User);
+            
+            _notificationService.MakeSeen(user.Id);
+            
+            return RedirectToAction("Notifications");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DeleteSeen() {
+            var user = await _userManager.GetUserAsync(User);
+            
+            _notificationService.RemoveSeen(user.Id);
+            
+            return RedirectToAction("Notifications");
+        }
     }
 }

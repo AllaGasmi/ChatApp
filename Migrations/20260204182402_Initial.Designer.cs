@@ -10,8 +10,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ChatAppProj.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260119144203_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260204182402_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,7 +21,7 @@ namespace ChatAppProj.Migrations
                 .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            modelBuilder.Entity("ApplicationUser", b =>
+            modelBuilder.Entity("ChatAppProj.Models.ApplicationUser", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -29,6 +29,10 @@ namespace ChatAppProj.Migrations
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
+
+                    b.Property<string>("Bio")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -85,6 +89,9 @@ namespace ChatAppProj.Migrations
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<int>("UserConfigurationId")
+                        .HasColumnType("int");
+
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
@@ -98,10 +105,12 @@ namespace ChatAppProj.Migrations
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
+                    b.HasIndex("UserConfigurationId");
+
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("Conversation", b =>
+            modelBuilder.Entity("ChatAppProj.Models.Conversation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -109,6 +118,9 @@ namespace ChatAppProj.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("GroupPicture")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
@@ -121,7 +133,7 @@ namespace ChatAppProj.Migrations
                     b.ToTable("Conversations");
                 });
 
-            modelBuilder.Entity("ConversationParticipant", b =>
+            modelBuilder.Entity("ChatAppProj.Models.ConversationParticipant", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -132,6 +144,9 @@ namespace ChatAppProj.Migrations
 
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -145,7 +160,49 @@ namespace ChatAppProj.Migrations
                     b.ToTable("ConversationParticipants");
                 });
 
-            modelBuilder.Entity("Friendship", b =>
+            modelBuilder.Entity("ChatAppProj.Models.ConversationRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("AdditionalUserIdsJson")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("ConversationType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GroupName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("ReceiverId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("RequesterId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("RequesterId");
+
+                    b.ToTable("ConversationRequests");
+                });
+
+            modelBuilder.Entity("ChatAppProj.Models.Friendship", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -175,7 +232,7 @@ namespace ChatAppProj.Migrations
                     b.ToTable("Friendships");
                 });
 
-            modelBuilder.Entity("Message", b =>
+            modelBuilder.Entity("ChatAppProj.Models.Message", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -204,6 +261,55 @@ namespace ChatAppProj.Migrations
                     b.HasIndex("SenderId");
 
                     b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("ChatAppProj.Models.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsSeen")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("ChatAppProj.Models.UserConfiguration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<bool>("AllowBeingAddedToGroup")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("AllowOnlyFriendsChat")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("AllowRequest")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserConfiguration");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<int>", b =>
@@ -332,15 +438,26 @@ namespace ChatAppProj.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("ConversationParticipant", b =>
+            modelBuilder.Entity("ChatAppProj.Models.ApplicationUser", b =>
                 {
-                    b.HasOne("Conversation", "Conversation")
+                    b.HasOne("ChatAppProj.Models.UserConfiguration", "UserConfiguration")
+                        .WithMany()
+                        .HasForeignKey("UserConfigurationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserConfiguration");
+                });
+
+            modelBuilder.Entity("ChatAppProj.Models.ConversationParticipant", b =>
+                {
+                    b.HasOne("ChatAppProj.Models.Conversation", "Conversation")
                         .WithMany("Participants")
                         .HasForeignKey("ConversationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ApplicationUser", "User")
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -351,15 +468,34 @@ namespace ChatAppProj.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Friendship", b =>
+            modelBuilder.Entity("ChatAppProj.Models.ConversationRequest", b =>
                 {
-                    b.HasOne("ApplicationUser", "Addressee")
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", "Requester")
+                        .WithMany()
+                        .HasForeignKey("RequesterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Requester");
+                });
+
+            modelBuilder.Entity("ChatAppProj.Models.Friendship", b =>
+                {
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", "Addressee")
                         .WithMany("ReceivedFriendRequests")
                         .HasForeignKey("AddresseeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("ApplicationUser", "Requester")
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", "Requester")
                         .WithMany("SentFriendRequests")
                         .HasForeignKey("RequesterId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -370,15 +506,15 @@ namespace ChatAppProj.Migrations
                     b.Navigation("Requester");
                 });
 
-            modelBuilder.Entity("Message", b =>
+            modelBuilder.Entity("ChatAppProj.Models.Message", b =>
                 {
-                    b.HasOne("Conversation", "Conversation")
+                    b.HasOne("ChatAppProj.Models.Conversation", "Conversation")
                         .WithMany("Messages")
                         .HasForeignKey("ConversationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ApplicationUser", "Sender")
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", "Sender")
                         .WithMany("Messages")
                         .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -386,6 +522,17 @@ namespace ChatAppProj.Migrations
                     b.Navigation("Conversation");
 
                     b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("ChatAppProj.Models.Notification", b =>
+                {
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -399,7 +546,7 @@ namespace ChatAppProj.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
                 {
-                    b.HasOne("ApplicationUser", null)
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -408,7 +555,7 @@ namespace ChatAppProj.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
                 {
-                    b.HasOne("ApplicationUser", null)
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -423,7 +570,7 @@ namespace ChatAppProj.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ApplicationUser", null)
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -432,23 +579,25 @@ namespace ChatAppProj.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
                 {
-                    b.HasOne("ApplicationUser", null)
+                    b.HasOne("ChatAppProj.Models.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("ApplicationUser", b =>
+            modelBuilder.Entity("ChatAppProj.Models.ApplicationUser", b =>
                 {
                     b.Navigation("Messages");
+
+                    b.Navigation("Notifications");
 
                     b.Navigation("ReceivedFriendRequests");
 
                     b.Navigation("SentFriendRequests");
                 });
 
-            modelBuilder.Entity("Conversation", b =>
+            modelBuilder.Entity("ChatAppProj.Models.Conversation", b =>
                 {
                     b.Navigation("Messages");
 

@@ -12,11 +12,13 @@ public class FriendshipController : Controller {
     private readonly IFriendshipRepository _friendshipRepository;
     private readonly IFriendshipService _friendshipService;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
 
-    public FriendshipController(IFriendshipRepository friendshipRepository, IFriendshipService friendshipService, IUserRepository userRepository) {
+    public FriendshipController(IFriendshipRepository friendshipRepository, IFriendshipService friendshipService, IUserRepository userRepository, INotificationService notificationService) {
         _friendshipRepository = friendshipRepository;
         _friendshipService = friendshipService;
         _userRepository = userRepository;
+        _notificationService = notificationService;
     }
 
     private int GetCurrentUserId()
@@ -43,6 +45,7 @@ public class FriendshipController : Controller {
     [HttpPost]
     public IActionResult SendRequest(int receiverId) {
         int senderId = GetCurrentUserId();
+        var sender = _userRepository.GetById(senderId);
         var receiver = _userRepository.GetById(receiverId);
 
         var response = _friendshipService.SendFriendRequest(senderId, receiverId);
@@ -55,6 +58,11 @@ public class FriendshipController : Controller {
             case SendFriendRequestResponse.Ok:
                 message = "Friend request sent to " + receiver.DisplayName + ".";
                 messageType = "success";
+
+                _notificationService.SendNotification(receiverId, new Notification() {
+                    Message = sender.DisplayName + " has sent you a friend request.",
+                    Type = NotificationType.FriendshipReceived
+                });
                 break;
             case SendFriendRequestResponse.RequestsDisabled:
                 message = receiver.DisplayName + " has disabled friend requests.";
@@ -116,8 +124,16 @@ public class FriendshipController : Controller {
     [HttpPost]
     public IActionResult AcceptRequest(int requestId) {
         _friendshipService.AcceptRequest(requestId);
+
+        var request = _friendshipRepository.GetById(requestId);
+        var receiver = _userRepository.GetById(request.AddresseeId);
         
         TempData["SuccessMessage"] = "Friend request accepted!";
+        
+        _notificationService.SendNotification(request.RequesterId, new Notification() {
+            Message = receiver.DisplayName + " has accepted your friend request!",
+            Type = NotificationType.FriendshipAccepted
+        });
         
         return RedirectToAction("Pending");
     }
@@ -125,8 +141,16 @@ public class FriendshipController : Controller {
     [HttpPost]
     public IActionResult DeclineRequest(int requestId) {
         _friendshipService.DeclineRequest(requestId);
+
+        var request = _friendshipRepository.GetById(requestId);
+        var receiver = _userRepository.GetById(request.AddresseeId);
         
         TempData["SuccessMessage"] = "Friend request declined.";
+        
+        _notificationService.SendNotification(request.RequesterId, new Notification() {
+            Message = receiver.DisplayName + " has declined your friend request.",
+            Type = NotificationType.FriendshipDenied
+        });
         
         return RedirectToAction("Pending");
     }

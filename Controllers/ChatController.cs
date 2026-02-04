@@ -19,20 +19,20 @@ public class ChatController : Controller
     private readonly IMessageRepository _messageRepository;
     private readonly IConversationRequestRepository _requestRepository;
     private readonly IConversationRepository _conversationRepository;
-    private readonly UserManager<ApplicationUser> _userManager;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationService _notificationService;
 
-    public ChatController(IConversationService conversationService,IMessageRepository messageRepository,IConversationRepository conversationRepository,UserManager<ApplicationUser> userManager, IUserRepository userRepository,IFriendshipRepository friendshipRepo,IFriendshipService friendshipService,IConversationRequestService conversationRequestService,IConversationRequestRepository requestRepository)
+    public ChatController(IConversationService conversationService,IMessageRepository messageRepository,IConversationRepository conversationRepository, IUserRepository userRepository,IFriendshipRepository friendshipRepo,IFriendshipService friendshipService,IConversationRequestService conversationRequestService,IConversationRequestRepository requestRepository, INotificationService notificationService)
     {
         _conversationService = conversationService;
         _messageRepository = messageRepository;
         _conversationRepository = conversationRepository;
-        _userManager = userManager;
         _userRepository = userRepository;
         _friendshipRepo=friendshipRepo;
         _friendshipService=friendshipService;
         _conversationRequestService=conversationRequestService;
         _requestRepository=requestRepository;
+        _notificationService=notificationService;
     }
 
     private int GetCurrentUserId()
@@ -124,6 +124,9 @@ public class ChatController : Controller
             return RedirectToAction("Conversation", new { id = existingConversation.Id });
         }
         bool areFriends = _friendshipService.AreFriends(userId, otherUserId);
+
+        var currentUser = _userRepository.GetById(userId);
+        var otherUser = _userRepository.GetById(otherUserId);
         
         if (!areFriends)
         {
@@ -134,6 +137,12 @@ public class ChatController : Controller
                     otherUserId, 
                     ConversationType.Private
                 );
+
+                _notificationService.SendNotification(otherUserId, new Notification() {
+                    Type = NotificationType.RequestReceived,
+                    Message = currentUser.DisplayName + " wants to start a private conversation with you."
+                });
+                
                 TempData["Success"] = "Conversation request sent! Waiting for acceptance.";
             }
             catch (InvalidOperationException)
@@ -186,142 +195,163 @@ public class ChatController : Controller
             return RedirectToAction("NewGroup");
         }
 
-        var nonFriendUsers = new List<int>();
-        var friendUsers = new List<int>();
+        userIds = userIds
+            .Where(id => id > 0 && id != userId)
+            .Distinct()
+            .ToList();
+
+        if (!userIds.Any())
+        {
+            TempData["Error"] = "No valid users selected.";
+            return RedirectToAction("NewGroup");
+        }
+
+        var currentUser = _userRepository.GetById(userId);
+        var currentUserName = currentUser?.DisplayName ?? currentUser?.UserName ?? "Someone";
+
+        var friendIds = new List<int>();
+        var nonFriendIds = new List<int>();
 
         foreach (var otherUserId in userIds)
         {
             if (_friendshipService.AreFriends(userId, otherUserId))
             {
-                friendUsers.Add(otherUserId);
+                friendIds.Add(otherUserId);
             }
             else
             {
-                nonFriendUsers.Add(otherUserId);
+                nonFriendIds.Add(otherUserId);
             }
         }
 
-        if (friendUsers.Any())
+        try
         {
-            try
+            if (friendIds.Any())
             {
-                var conversation = _conversationService.CreateGroupConversation(groupName, userId, friendUsers);
+                var conversation = _conversationService.CreateGroupConversation(groupName, userId, friendIds);
                 
+                // Send invitations to non-friends to join the existing group
                 int sentInvitations = 0;
-                foreach (var nonFriendId in nonFriendUsers)
+                foreach (var nonFriendId in nonFriendIds)
                 {
                     try
                     {
-                        var currentConversation = _conversationRepository.GetConversationWithDetails(conversation.Id);
-                        var allCurrentParticipants = currentConversation.Participants.Select(p => p.UserId).ToList();
-                        
+                        // Get current participants (friends + creator)
+                        var currentParticipants = conversation.Participants
+                            .Select(p => p.UserId)
+                            .Where(id => id != userId) // Don't include creator in the list
+                            .ToList();
+
                         _conversationRequestService.SendConversationRequest(
                             userId,
                             nonFriendId,
                             ConversationType.Group,
                             groupName,
-                            allCurrentParticipants.Where(p => p != userId).ToList(),
-                            "You've been invited to join this group"
+                            currentParticipants,
+                            $"You've been invited to join '{groupName}'"
                         );
+
+                        // Send notification
+                        _notificationService.SendNotification(nonFriendId, new Notification() 
+                        {
+                            Type = NotificationType.RequestReceived,
+                            Message = $"{currentUserName} invited you to join \"{groupName}\"."
+                        });
+                        
                         sentInvitations++;
                     }
                     catch (InvalidOperationException)
                     {
+                        // Request already exists for this user
                         continue;
                     }
                 }
 
+                // Set success message based on what happened
                 if (sentInvitations > 0)
                 {
-                    TempData["Success"] = $"Group created with {friendUsers.Count} friend(s)! Invitations sent to {sentInvitations} other user(s).";
+                    TempData["Success"] = $"Group created with {friendIds.Count} friend(s)! " +
+                                        $"{sentInvitations} invitation(s) sent to other users.";
                 }
-                else if (nonFriendUsers.Any())
+                else if (nonFriendIds.Count > 0)
                 {
-                    TempData["Success"] = $"Group created with {friendUsers.Count} friend(s)! Some invitations couldn't be sent (they may already exist).";
+                    TempData["Success"] = $"Group created with {friendIds.Count} friend(s)! " +
+                                        $"Some invitations couldn't be sent (pending requests may already exist).";
                 }
                 else
                 {
-                    TempData["Success"] = "Group created successfully!";
+                    TempData["Success"] = $"Group '{groupName}' created successfully with {friendIds.Count} member(s)!";
                 }
                 
                 return RedirectToAction("Conversation", new { id = conversation.Id });
             }
-            catch (Exception ex)
+            // If we ONLY have non-friends, send invitations and wait for acceptance
+            else if (nonFriendIds.Any())
             {
-                TempData["Error"] = $"Error creating group: {ex.Message}";
-                return RedirectToAction("NewGroup");
-            }
-        }
-        else if (nonFriendUsers.Any())
-        {
-            var createdRequests = new List<int>();
-            
-            var additionalUsers = nonFriendUsers.Skip(1).ToList();
-            
-            try
-            {
-                var firstRequest = _conversationRequestService.SendConversationRequest(
-                    userId,
-                    nonFriendUsers.First(),
-                    ConversationType.Group,
-                    groupName,
-                    additionalUsers,
-                    "You've been invited to join this group"
-                );
-                createdRequests.Add(firstRequest.Id);
-            }
-            catch (InvalidOperationException ex)
-            {
-                TempData["Error"] = $"Cannot send invitation: {ex.Message}";
-                return RedirectToAction("NewGroup");
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = $"Error sending invitation: {ex.Message}";
-                return RedirectToAction("NewGroup");
-            }
-            for (int i = 1; i < nonFriendUsers.Count; i++)
-            {
-                try
+                // Create invitations for ALL non-friends
+                // Each invitation includes ALL OTHER non-friends as additional users
+                int createdRequests = 0;
+                
+                foreach (var nonFriendId in nonFriendIds)
                 {
-                    var otherUsers = new List<int>(nonFriendUsers);
-                    otherUsers.RemoveAt(i); 
-                    
-                    var request = _conversationRequestService.SendConversationRequest(
-                        userId,
-                        nonFriendUsers[i],
-                        ConversationType.Group,
-                        groupName,
-                        otherUsers,
-                        "You've been invited to join this group"
-                    );
-                    createdRequests.Add(request.Id);
+                    try
+                    {
+                        // List all OTHER non-friends as additional users
+                        var otherNonFriends = nonFriendIds
+                            .Where(id => id != nonFriendId)
+                            .ToList();
+
+                        _conversationRequestService.SendConversationRequest(
+                            userId,
+                            nonFriendId,
+                            ConversationType.Group,
+                            groupName,
+                            otherNonFriends,
+                            $"You've been invited to join '{groupName}'"
+                        );
+
+                        // Send notification
+                        _notificationService.SendNotification(nonFriendId, new Notification() 
+                        {
+                            Type = NotificationType.RequestReceived,
+                            Message = $"{currentUserName} invited you to join \"{groupName}\"."
+                        });
+                        
+                        createdRequests++;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        // Request already exists for this user
+                        continue;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error sending invitation to user {nonFriendId}: {ex.Message}");
+                        continue;
+                    }
                 }
-                catch (InvalidOperationException)
+
+                if (createdRequests > 0)
                 {
-                    continue;
+                    TempData["Success"] = $"Group invitations sent to {createdRequests} user(s). " +
+                                        $"The group will be created when the first invitation is accepted.";
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"Error sending invitation to user {nonFriendUsers[i]}: {ex.Message}");
-                    continue;
+                    TempData["Error"] = "Could not send any invitations. Pending requests may already exist for all users.";
                 }
-            }
-            
-            if (createdRequests.Count > 0)
-            {
-                TempData["Success"] = $"Group invitations sent to {createdRequests.Count} user(s). The group will be created when at least one invitation is accepted.";
+                
+                return RedirectToAction("Requests");
             }
             else
             {
-                TempData["Error"] = "Could not send any invitations. Pending requests may already exist.";
+                TempData["Error"] = "No valid users selected.";
+                return RedirectToAction("NewGroup");
             }
-            
-            return RedirectToAction("Requests");
         }
-        else
+        catch (Exception ex)
         {
-            TempData["Error"] = "No users selected.";
+            TempData["Error"] = $"Error creating group: {ex.Message}";
             return RedirectToAction("NewGroup");
         }
     }
@@ -341,6 +371,7 @@ public class ChatController : Controller
         try
         {
             int actorId = GetCurrentUserId();
+            var currentUser = _userRepository.GetById(actorId);
             bool areFriends = _friendshipService.AreFriends(actorId, userId);
             
             if (!areFriends)
@@ -358,6 +389,12 @@ public class ChatController : Controller
                         existingParticipants,
                         "You've been invited to join this group"
                     );
+                    
+                    _notificationService.SendNotification(userId, new Notification() 
+                    {
+                        Type = NotificationType.RequestReceived,
+                        Message = $"{currentUser.DisplayName} invited you to join \"{conversation.Name}\"."
+                    });
                     
                     TempData["Success"] = "Invitation sent! User will be added when they accept.";
                 }

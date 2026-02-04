@@ -5,6 +5,7 @@ using System.Security.Claims;
 using ChatAppProj.ServiceContracts;
 using ChatAppProj.Models;
 using ChatAppProj.RepositoryContracts;
+using Microsoft.VisualBasic;
 
 [Authorize]
 public class ChatHub : Hub
@@ -13,14 +14,18 @@ public class ChatHub : Hub
     private readonly IConversationService _conversationService;
     private readonly IConversationRequestService _conversationRequestService;
     private readonly IUserRepository _userRepository;
+    private readonly IConversationRepository _conversationRepository;
+    private readonly INotificationService _notificationService;
     private static readonly Dictionary<int, string> _userConnections = new();
 
-    public ChatHub(UserManager<ApplicationUser> userManager,IConversationService conversationService,IConversationRequestService conversationRequestService,IUserRepository userRepository)
+    public ChatHub(UserManager<ApplicationUser> userManager,IConversationService conversationService,IConversationRequestService conversationRequestService,IUserRepository userRepository, IConversationRepository conversationRepository, INotificationService notificationService)
     {
         _userManager = userManager;
         _conversationService = conversationService;
         _conversationRequestService = conversationRequestService;
         _userRepository = userRepository;
+        _conversationRepository = conversationRepository;
+        _notificationService = notificationService;
     }
 
     private int GetUserId()
@@ -84,12 +89,35 @@ public class ChatHub : Hub
     public async Task SendMessage(int conversationId, string content)
     {
         int userId = GetUserId();
+        var user = _userRepository.GetById(userId);
 
         var messages = _conversationService.SendMessage(
             conversationId,
             userId,
             content
         );
+
+        var conversation = _conversationRepository.GetById(conversationId);
+        var participants = conversation.Participants;
+
+        foreach (var participant in participants) {
+            var currentParticipantId = participant.UserId;
+
+            if (userId != currentParticipantId) {
+                string msg;
+                if (conversation.Type == ConversationType.Private) {
+                    msg = "New message from " + user.DisplayName  + " : \"" + content + "\".";
+                }
+                else {
+                    msg = "New message in " + conversation.Name + " : \"" + content + "\".";
+                }
+                
+                _notificationService.SendNotification(currentParticipantId, new Notification() {
+                    Message = msg,
+                    Type = NotificationType.Message
+                });
+            }
+        }
 
         foreach (var msg in messages)
         {

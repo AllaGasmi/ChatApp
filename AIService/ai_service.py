@@ -5,6 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import requests
 import json
 from datetime import datetime
+import os
+from dotenv import load_dotenv
 import uuid
 
 app = FastAPI(title="Chat App AI Service", description="Optimized for C#/.NET frontend")
@@ -39,7 +41,9 @@ class HealthResponse(BaseModel):
     modelsAvailable: List[str]
 
 
-api_key_here
+load_dotenv()
+
+API_KEY = os.getenv("API_KEY")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 

@@ -13,6 +13,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<int>
     public DbSet<ConversationRequest> ConversationRequests { get; set; }
     public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
     public DbSet<Message> Messages { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

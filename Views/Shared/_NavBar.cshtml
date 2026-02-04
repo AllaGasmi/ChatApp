@@ -12,8 +12,24 @@
 @using Microsoft.AspNetCore.Identity
 @using ChatAppProj.Models
 @inject UserManager<ApplicationUser> UserManager
+@inject ChatAppProj.RepositoryContracts.IUserRepository UserService
 @{
     var currentUser = await UserManager.GetUserAsync(User);
+
+    bool hasUnseenNotifications = true;
+    if (currentUser != null && User.Identity.IsAuthenticated)
+    {
+        try
+        {
+            hasUnseenNotifications = UserService.HasUnseen(currentUser.Id);
+        }
+        catch (Exception ex)
+        {
+            // Log error or handle gracefully
+            hasUnseenNotifications = false;
+        }
+    }
+    
     var displayName = currentUser?.DisplayName ?? currentUser?.UserName ?? "User";
     var Id = currentUser?.Id ?? 0;
     var avatar = currentUser?.ProfilePicture ?? "https://via.placeholder.com/32";
@@ -77,26 +93,20 @@
                             </form>
                         </div>
                         
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const searchInput = document.getElementById('navbarSearchInput');
-                                const searchForm = document.getElementById('navbarSearchForm');
-                                
-                                if (searchInput) {
-                                    // Auto-submit when user presses Enter
-                                    searchInput.addEventListener('keypress', function(e) {
-                                        if (e.key === 'Enter' && this.value.trim().length > 0) {
-                                            searchForm.submit();
-                                        }
-                                    });
-                                    
-                                    // Focus the input when user clicks the search icon
-                                    document.querySelector('.search-icon').addEventListener('click', function() {
-                                        searchInput.focus();
-                                    });
+                        <!-- Notification Bell -->
+                        <div class="position-relative me-3">
+                            <a class="nav-link nav-link-custom position-relative" 
+                               asp-controller="Account" asp-action="Notifications" 
+                               title="Notifications">
+                                <i class="bi bi-bell fs-5"></i>
+                                @if (hasUnseenNotifications)
+                                {
+                                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                                        <span class="visually-hidden">New notifications</span>
+                                    </span>
                                 }
-                            });
-                        </script>
+                            </a>
+                        </div>
 
                         <!-- User Dropdown Menu -->
                         <div class="dropdown">
@@ -121,7 +131,6 @@
                                         <i class="bi bi-pencil-square"></i> Edit Profile
                                     </a>
                                 </li>
-
                                 <li>
                                     <a class="dropdown-item dropdown-item-custom" asp-controller="Account" asp-action="Configuration">
                                         <i class="bi bi-gear"></i> Settings
@@ -130,6 +139,11 @@
                                 <li>
                                     <a class="dropdown-item dropdown-item-custom" asp-controller="Friendship" asp-action="Pending">
                                         <i class="bi bi-envelope"></i> Requests
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item dropdown-item-custom" asp-controller="Account" asp-action="Notifications">
+                                        <i class="bi bi-bell"></i> Notifications
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider dropdown-divider-custom"></li>

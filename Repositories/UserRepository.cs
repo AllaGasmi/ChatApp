@@ -14,6 +14,12 @@ public class UserRepository : GenericRepository<ApplicationUser>, IUserRepositor
         _friendshipService = friendshipService;
     }
 
+    public new ApplicationUser? GetById(int userId) {
+        return _context.Users
+            .Include(u => u.Notifications) // This loads the Notifications
+            .FirstOrDefault(u => u.Id == userId);
+    }
+    
     public List<ApplicationUser> GetUsersWhoAllowPrivateChats(int userId) {
         var users = _context.Users
             .Include(u => u.UserConfiguration)
@@ -78,5 +84,38 @@ public class UserRepository : GenericRepository<ApplicationUser>, IUserRepositor
         user.IsOnline = false;
         user.LastSeen = DateTime.Now;
         _context.SaveChanges();
+    }
+
+    public List<Notification> GetNotifications(int userId) {
+        return _context.Notifications
+            .Where(n => n.UserId == userId)
+            .OrderByDescending(n => n.SentAt)
+            .ToList();
+    }
+
+    public void RemoveSeen(int userId) {
+        var notifications = _context.Notifications
+            .Where(n => n.UserId == userId && n.IsSeen)
+            .ToList();
+    
+        _context.Notifications.RemoveRange(notifications);
+        _context.SaveChanges();
+    }
+
+    public void MakeAllSeen(int userId) {
+        var notifications = _context.Notifications
+            .Where(n => n.UserId == userId && !n.IsSeen)
+            .ToList();
+    
+        foreach (var notification in notifications) {
+            notification.IsSeen = true;
+        }
+    
+        _context.SaveChanges();
+    }
+
+    public bool HasUnseen(int userId) {
+        return _context.Notifications
+            .Any(n => n.UserId == userId && !n.IsSeen);
     }
 }
