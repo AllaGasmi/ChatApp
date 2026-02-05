@@ -7,4 +7,5 @@ public interface IMessageRepository : IGenericRepository<Message>
     int GetUnreadMessageCount(int userId);
     int GetTotalMessageCount(int userId);
     List<Message> GetRecentMessagesForUser(int userId, int count = 10);
+    void MarkMessagesAsRead(int conversationId, int userId);
 }

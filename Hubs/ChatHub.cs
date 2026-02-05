@@ -15,10 +15,11 @@ public class ChatHub : Hub
     private readonly IConversationRequestService _conversationRequestService;
     private readonly IUserRepository _userRepository;
     private readonly IConversationRepository _conversationRepository;
+    private readonly IMessageRepository _messageRepository;
     private readonly INotificationService _notificationService;
     private static readonly Dictionary<int, string> _userConnections = new();
 
-    public ChatHub(UserManager<ApplicationUser> userManager,IConversationService conversationService,IConversationRequestService conversationRequestService,IUserRepository userRepository, IConversationRepository conversationRepository, INotificationService notificationService)
+    public ChatHub(UserManager<ApplicationUser> userManager,IConversationService conversationService,IConversationRequestService conversationRequestService,IUserRepository userRepository, IConversationRepository conversationRepository, INotificationService notificationService,IMessageRepository messageRepository)
     {
         _userManager = userManager;
         _conversationService = conversationService;
@@ -26,6 +27,7 @@ public class ChatHub : Hub
         _userRepository = userRepository;
         _conversationRepository = conversationRepository;
         _notificationService = notificationService;
+        _messageRepository=messageRepository;
     }
 
     private int GetUserId()
@@ -212,6 +214,27 @@ public class ChatHub : Hub
         catch (Exception ex)
         {
             await Clients.Caller.SendAsync("RequestError", ex.Message);
+        }
+    }
+    public async Task MarkMessagesAsRead(int conversationId)
+    {
+        int userId = GetUserId();
+        
+        var messages = _messageRepository.GetConversationMessages(conversationId)
+            .Where(m => m.SenderId != userId && !m.IsRead)
+            .ToList();
+            
+        foreach (var message in messages)
+        {
+            message.IsRead = true;
+            _messageRepository.Update(message);
+        }
+        
+        var senderIds = messages.Select(m => m.SenderId).Distinct();
+        foreach (var senderId in senderIds)
+        {
+            await Clients.Group($"user_{senderId}")
+                .SendAsync("MessagesRead", new { ConversationId = conversationId, ReadByUserId = userId });
         }
     }
 

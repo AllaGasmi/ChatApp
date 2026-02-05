@@ -68,6 +68,8 @@ public class ChatController : Controller
             return NotFound();
         }
 
+        _messageRepository.MarkMessagesAsRead(id, userId);
+
         var messages = _messageRepository.GetConversationMessages(id);
         bool isGroup = conversation.Type == ConversationType.Group;
 

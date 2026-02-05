@@ -26,8 +26,8 @@ public class MessageRepository : GenericRepository<Message>, IMessageRepository
 
         return _context.Messages
             .Where(m => userConversationIds.Contains(m.ConversationId) 
-                     && m.SenderId != userId
-                     && m.SentAt > DateTime.UtcNow.AddDays(-1)) 
+                    && m.SenderId != userId
+                    && !m.IsRead)  
             .Count();
     }
 
@@ -59,5 +59,20 @@ public class MessageRepository : GenericRepository<Message>, IMessageRepository
             .OrderByDescending(m => m.SentAt)
             .Take(count)
             .ToList();
+    }
+    public void MarkMessagesAsRead(int conversationId, int userId)
+    {
+        var messages = _context.Messages
+            .Where(m => m.ConversationId == conversationId 
+                    && m.SenderId != userId 
+                    && !m.IsRead)
+            .ToList();
+
+        foreach (var message in messages)
+        {
+            message.IsRead = true;
+        }
+        
+        _context.SaveChanges();
     }
 }

@@ -168,16 +168,12 @@
 
     <div class="quick-stats">
         <div class="stat-box">
-            <div class="stat-number">@(stats?.NewMessages ?? 0)</div>
+            <div class="stat-number">@(stats?.UnreadMessages ?? 0)</div>
             <div class="stat-label">New Messages</div>
         </div>
         <div class="stat-box">
             <div class="stat-number">@(stats?.ActiveChats ?? 0)</div>
             <div class="stat-label">Active Chats</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-number">@(stats?.UnreadMessages ?? 0)</div>
-            <div class="stat-label">Unread</div>
         </div>
         <div class="stat-box">
             <div class="stat-number">@(stats?.FriendsOnline ?? 0)</div>

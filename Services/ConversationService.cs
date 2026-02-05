@@ -85,12 +85,12 @@ public class ConversationService : IConversationService
 
     public List<MessageDto> SendMessage(int conversationId, int senderId, string content)
     {
-        
         if (!_participantRepo.IsUserInConversation(conversationId, senderId))
             throw new UnauthorizedAccessException();
 
         var result = new List<MessageDto>();
 
+        var sender = _userManager.Users.FirstOrDefault(u => u.Id == senderId);
 
         var userMessage = new Message
         {
@@ -107,6 +107,7 @@ public class ConversationService : IConversationService
             Id = userMessage.Id,
             ConversationId = userMessage.ConversationId,
             SenderId = userMessage.SenderId,
+            SenderName = sender?.DisplayName ?? sender?.UserName ?? "Unknown",  // Add this
             Content = userMessage.Content,
             IsAI = false,
             SentAt = userMessage.SentAt
@@ -118,8 +119,7 @@ public class ConversationService : IConversationService
 
         if (aiParticipant != null && senderId != aiParticipant.UserId)
         {
-
-            string aiReply = _aiService.GetAIResponse(content); 
+            string aiReply = _aiService.GetAIResponse(content);
 
             var aiMessage = new Message
             {
@@ -136,6 +136,7 @@ public class ConversationService : IConversationService
                 Id = aiMessage.Id,
                 ConversationId = aiMessage.ConversationId,
                 SenderId = aiMessage.SenderId,
+                SenderName = "AI Assistant", 
                 Content = aiMessage.Content,
                 IsAI = true,
                 SentAt = aiMessage.SentAt
@@ -144,7 +145,6 @@ public class ConversationService : IConversationService
 
         return result;
     }
-
     public void AddParticipant(int conversationId, int actorId, int targetUserId)
     {
         if (!_participantRepo.IsAdminOrCreator(conversationId, actorId))
@@ -262,8 +262,8 @@ public class ConversationService : IConversationService
                     : "No messages";
 
                 var unreadCount = c.Messages?
-                    .Count(m => m.SenderId != userId
-                             && m.SentAt > DateTime.UtcNow.AddDays(-1)) ?? 0;
+                                    .Count(m => m.SenderId != userId
+                                            && !m.IsRead) ?? 0;
 
                 return new RecentConversationDto
                 {
