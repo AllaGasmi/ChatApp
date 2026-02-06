@@ -171,12 +171,15 @@
                 
             }
         </div>
+        @if (!isGroup)
+        {
         <div class="group-actions" style="margin-top: 1rem;">
             <button class="btn-group-action btn-danger-action" onclick="deleteConversation()">
                 <i class="bi bi-trash"></i>
                 Delete Chat
             </button>
         </div>
+        }
     </aside>
     
     <main class="chat-container">

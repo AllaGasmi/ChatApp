@@ -18,6 +18,7 @@ public class ChatHub : Hub
     private readonly IMessageRepository _messageRepository;
     private readonly INotificationService _notificationService;
     private static readonly Dictionary<int, string> _userConnections = new();
+    private static readonly Dictionary<int, int> _userActiveConversations = new();
 
     public ChatHub(UserManager<ApplicationUser> userManager,IConversationService conversationService,IConversationRequestService conversationRequestService,IUserRepository userRepository, IConversationRepository conversationRepository, INotificationService notificationService,IMessageRepository messageRepository)
     {
@@ -126,8 +127,18 @@ public class ChatHub : Hub
             await Clients.Group($"conversation_{conversationId}")
                 .SendAsync("ReceiveMessage", msg);
         }
+        
+        
+        foreach (var msg in messages)
+        {
+            await Clients.Group($"conversation_{conversationId}")
+                .SendAsync("NewMessageNotification", new {
+                    Message = msg,
+                    ConversationId = conversationId,
+                    IsActive = false 
+                });
+        }
     }
-
     public async Task JoinConversation(int conversationId)
     {
         int userId = GetUserId();
@@ -235,6 +246,19 @@ public class ChatHub : Hub
         {
             await Clients.Group($"user_{senderId}")
                 .SendAsync("MessagesRead", new { ConversationId = conversationId, ReadByUserId = userId });
+        }
+    }
+    public async Task SetActiveConversation(int? conversationId)
+    {
+        int userId = GetUserId();
+        
+        if (conversationId.HasValue)
+        {
+            _userActiveConversations[userId] = conversationId.Value;
+        }
+        else
+        {
+            _userActiveConversations.Remove(userId);
         }
     }
 

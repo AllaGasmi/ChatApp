@@ -1,5 +1,3 @@
-// conversation.js - Chat functionality for conversation page
-
 (function() {
     'use strict';
     
@@ -11,6 +9,7 @@
     let availableUsers = [];
     let showAllUsers = false;
     let connection = null;
+    let currentConversationId = null;
 
     const messageInput = document.getElementById('messageInput');
     const sendButton = document.getElementById('sendButton');
@@ -32,6 +31,11 @@
         connection.start()
             .then(() => {
                 console.log("Connected to ChatHub");
+                currentConversationId = conversationId;
+                return connection.invoke("SetActiveConversation", conversationId);
+            })
+            .then(() => {
+                console.log("Set active conversation:", conversationId);
                 return connection.invoke("JoinConversation", conversationId);
             })
             .then(() => {
@@ -41,8 +45,17 @@
 
         connection.on("ReceiveMessage", (message) => {
             console.log("Message received:", message);
-            addMessageToUI(message);
-            scrollToBottom();
+            if (message.conversationId === currentConversationId) {
+                addMessageToUI(message);
+                scrollToBottom();
+            } else {
+                showNotificationBadge(message.conversationId, message);
+            }
+        });
+        connection.on("NewMessageNotification", (data) => {
+            if (data.conversationId !== currentConversationId) {
+                showNotificationBadge(data.conversationId, data.message);
+            }
         });
     }
 
@@ -73,9 +86,55 @@
 
         window.addEventListener('beforeunload', () => {
             if (connection) {
+                connection.invoke("SetActiveConversation", null);
                 connection.invoke("LeaveConversation", conversationId);
             }
         });
+    }
+
+    function showNotificationBadge(convoId, message) {
+        const sidebarItem = document.querySelector(`[data-conversation-id="${convoId}"]`);
+        if (sidebarItem) {
+            let badge = sidebarItem.querySelector('.unread-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'unread-badge';
+                badge.style.cssText = 'background: #ff4757; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.75rem; margin-left: 8px;';
+                sidebarItem.appendChild(badge);
+            }
+            const currentCount = parseInt(badge.textContent) || 0;
+            badge.textContent = currentCount + 1;
+        }
+
+        showToastNotification(message);
+    }
+
+    function showToastNotification(message) {
+        let toast = document.getElementById('message-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'message-toast';
+            toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #333; color: white; padding: 16px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; max-width: 300px; display: none; cursor: pointer;';
+            document.body.appendChild(toast);
+        }
+
+        const senderName = message.senderName || "New message";
+        const preview = message.content.substring(0, 50) + (message.content.length > 50 ? '...' : '');
+        
+        toast.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 4px;">${escapeHtml(senderName)}</div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">${escapeHtml(preview)}</div>
+        `;
+        
+        toast.style.display = 'block';
+        
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 5000);
+
+        toast.onclick = () => {
+            window.location.href = `/Chat/Conversation/${message.conversationId}`;
+        };
     }
 
     async function sendMessage() {
@@ -142,6 +201,20 @@
         div.textContent = text;
         return div.innerHTML;
     }
+
+    window.leaveConversation = function() {
+        currentConversationId = null;
+        if (connection) {
+            connection.invoke("SetActiveConversation", null);
+        }
+    };
+
+    window.loadConversation = function(newConversationId) {
+        currentConversationId = newConversationId;
+        if (connection) {
+            connection.invoke("SetActiveConversation", newConversationId);
+        }
+    };
 
     window.openModal = function(modalId) {
         const modal = document.getElementById(modalId);
@@ -349,6 +422,7 @@
             });
 
             if (response.ok) {
+                leaveConversation();
                 window.location.href = '/Chat/Index';
             } else {
                 const text = await response.text();
@@ -381,6 +455,7 @@
             });
 
             if (response.ok) {
+                leaveConversation();
                 window.location.href = '/Chat/Index';
             } else {
                 const text = await response.text();
