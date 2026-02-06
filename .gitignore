@@ -1,0 +1,9 @@
+bin/
+obj/
+appsettings.Development.json
+appsettings.json
+wwwroot/uploads/
+AIService/__pycache__/
+AIService/.env
+AIService/venv/
+__pycache__/

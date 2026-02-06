@@ -1,0 +1,228 @@
+@model ChatAppProj.DTO.RegisterDto
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+}
+
+    <div class="profile-container">
+        <div class="profile-header">
+            <h2>Create Account</h2>
+            <p>Join our community and start chatting</p>
+        </div>
+
+        @if (ViewBag.Message != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle me-2"></i>
+                @ViewBag.Message
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <form asp-action="Register" method="post" id="registerForm">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger">
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email" class="form-label">Email Address</label>
+                <input asp-for="Email" class="form-control" placeholder="Enter your email address" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password" class="form-label">Password</label>
+                <div class="input-group">
+                    <input asp-for="Password" type="password" class="form-control" placeholder="Create a password" 
+                           id="passwordInput" oninput="checkPasswordStrength(this.value)" />
+                    <button type="button" class="toggle-password" id="togglePassword">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </div>
+                <div class="password-strength">
+                    <div class="strength-bar">
+                        <div class="strength-fill" id="strengthFill"></div>
+                    </div>
+                    <div class="strength-text" id="strengthText">Password strength</div>
+                </div>
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="DisplayName" class="form-label">Display Name</label>
+                <input asp-for="DisplayName" class="form-control" placeholder="Choose a display name" />
+                <span asp-validation-for="DisplayName" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ProfilePicture" class="form-label">Profile Picture URL (optional)</label>
+                <input asp-for="ProfilePicture" class="form-control" placeholder="https://example.com/your-image.jpg" 
+                       id="profilePictureInput" oninput="updatePreview(this.value)" />
+                
+                <div class="profile-preview-container" id="previewContainer" style="display: none;">
+                    <img src="" alt="Profile Preview" class="profile-preview" id="profilePreview" 
+                         onerror="this.src='https://via.placeholder.com/100?text=Invalid+URL'" />
+                    <span class="preview-label">Profile Preview</span>
+                </div>
+                
+                <small class="text-muted">Leave empty to use default avatar</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                <i class="bi bi-person-plus me-2"></i> Create Account
+            </button>
+
+            <div class="auth-links">
+                <p class="mb-2">
+                    Already have an account? 
+                    <a asp-action="Login" class="fw-bold">Sign In</a>
+                </p>
+                <p class="mb-0 small text-muted">
+                    By registering, you agree to our Terms of Service
+                </p>
+            </div>
+        </form>
+    </div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Password visibility toggle
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordInput = document.getElementById('passwordInput');
+            
+            if (togglePassword && passwordInput) {
+                togglePassword.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    
+                    // Toggle eye icon
+                    const icon = this.querySelector('i');
+                    if (type === 'password') {
+                        icon.classList.remove('bi-eye-slash');
+                        icon.classList.add('bi-eye');
+                    } else {
+                        icon.classList.remove('bi-eye');
+                        icon.classList.add('bi-eye-slash');
+                    }
+                });
+            }
+            
+            // Profile picture preview
+            const profilePicInput = document.getElementById('profilePictureInput');
+            if (profilePicInput && profilePicInput.value) {
+                updatePreview(profilePicInput.value);
+            }
+            
+            // Auto-dismiss alerts after 5 seconds
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(alert => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+            
+            // Form submission handler
+            const form = document.getElementById('registerForm');
+            if (form) {
+                form.addEventListener('submit', function() {
+                    const submitBtn = document.getElementById('submitBtn');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="bi bi-hourglass me-2"></i> Creating Account...';
+                    }
+                });
+            }
+        });
+        
+        // Password strength checker
+        function checkPasswordStrength(password) {
+            const strengthFill = document.getElementById('strengthFill');
+            const strengthText = document.getElementById('strengthText');
+            
+            if (!password) {
+                strengthFill.style.width = '0%';
+                strengthFill.style.backgroundColor = '#eee';
+                strengthText.textContent = 'Password strength';
+                strengthText.style.color = '#666';
+                return;
+            }
+            
+            let score = 0;
+            
+            // Length check
+            if (password.length >= 8) score++;
+            if (password.length >= 12) score++;
+            
+            // Character variety
+            if (/[A-Z]/.test(password)) score++;
+            if (/[a-z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+            
+            // Calculate percentage and color
+            const percentage = Math.min((score / 6) * 100, 100);
+            let color = '#e44'; // Red
+            let text = 'Weak';
+            
+            if (percentage >= 50) {
+                color = '#f90'; // Orange
+                text = 'Fair';
+            }
+            if (percentage >= 75) {
+                color = '#9c0'; // Green
+                text = 'Good';
+            }
+            if (percentage >= 90) {
+                color = '#2a7'; // Dark green
+                text = 'Strong';
+            }
+            
+            strengthFill.style.width = percentage + '%';
+            strengthFill.style.backgroundColor = color;
+            strengthText.textContent = 'Password strength: ' + text;
+            strengthText.style.color = color;
+        }
+        
+        // Profile picture preview updater
+        function updatePreview(url) {
+            const previewContainer = document.getElementById('previewContainer');
+            const preview = document.getElementById('profilePreview');
+            
+            if (url && url.trim() !== '') {
+                preview.src = url;
+                previewContainer.style.display = 'block';
+            } else {
+                previewContainer.style.display = 'none';
+            }
+        }
+        
+        // Real-time validation feedback
+        const inputs = document.querySelectorAll('.form-control');
+        inputs.forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.value.trim() !== '') {
+                    this.classList.add('filled');
+                } else {
+                    this.classList.remove('filled');
+                }
+            });
+            
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+    </script>
+}

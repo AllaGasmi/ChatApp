@@ -1,0 +1,321 @@
+@model ChatAppProj.Models.Conversation
+
+@{
+    ViewData["Title"] = ViewBag.ConversationName;
+    var userId = ViewBag.UserId;
+    var userName = ViewBag.UserName;
+    var conversationId = ViewBag.ConversationId;
+    var conversationName = ViewBag.ConversationName;
+    var messages = ViewBag.Messages as List<ChatAppProj.Models.Message>;
+    bool isGroup = ViewBag.IsGroup ?? false;
+    bool isCreator = ViewBag.IsCreator ?? false;
+    bool isAdminOrCreator = ViewBag.IsAdminOrCreator ?? false;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/conversation.css" asp-append-version="true" />
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-error">
+        @TempData["Error"]
+    </div>
+}
+
+<div class="chat-wrapper">
+    <aside class="sidebar">
+        @if (isGroup)
+        {
+            <div class="group-info-section">
+                <div class="group-avatar">
+                    @if (!string.IsNullOrEmpty(Model.GroupPicture))
+                    {
+                        <img src="@Model.GroupPicture" alt="@conversationName" />
+                    }
+                    else
+                    {
+                        <span>@conversationName.Substring(0, 1).ToUpper()</span>
+                    }
+                </div>
+                <div class="group-name-display">@conversationName</div>
+                <div class="group-member-count">
+                    <i class="bi bi-people"></i>
+                    @Model.Participants.Count members
+                    @if (Model.Participants.Any(p => p.User.IsOnline))
+                    {
+                        <span style="color: #10b981; margin-left: 0.5rem;">
+                            • @Model.Participants.Count(p => p.User.IsOnline) online
+                        </span>
+                    }
+                </div>
+                
+                @if (isAdminOrCreator)
+                {
+                    <div class="group-actions">
+                        <button class="btn-group-action btn-primary-action" onclick="openEditGroupModal()">
+                            <i class="bi bi-pencil-square"></i>
+                            Edit
+                        </button>
+                        <button class="btn-group-action btn-primary-action" onclick="openAddMemberModal()">
+                            <i class="bi bi-person-plus"></i>
+                            Add
+                        </button>
+                    </div>
+                }
+                
+                <div class="group-actions" style="margin-top: 0.5rem;">
+                    @if (isCreator)
+                    {
+                        <button class="btn-group-action btn-danger-action" onclick="deleteConversation()">
+                            <i class="bi bi-trash"></i>
+                            Delete
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn-group-action btn-danger-action" onclick="leaveGroup()">
+                            <i class="bi bi-box-arrow-left"></i>
+                            Leave
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            @* <div class="group-actions" style="margin-top: 1rem;">
+                <button class="btn-group-action btn-danger-action" onclick="deleteConversation()">
+                    <i class="bi bi-trash"></i>
+                    Delete Chat
+                </button>
+            </div> *@
+        }
+        
+        <h3>
+            @if (isGroup)
+            {
+                <i class="bi bi-people"></i>
+                <text>Members (@Model.Participants.Count)</text>
+            }
+            else
+            {
+                <i class="bi bi-person"></i>
+                <text>Chat Info</text>
+            }
+        </h3>
+        
+        <div class="participants-container">
+            @foreach (var participant in Model.Participants)
+            {
+                var initial = participant.User.UserName?.Substring(0, 1).ToUpper() ?? "?";
+                var isOnline = participant.User.IsOnline;
+                var isCurrentUser = participant.UserId == userId;
+                var roleClass = participant.Role.ToString().ToLower();
+                
+                <div class="participant-item">
+                    <div class="participant-avatar">
+                        @initial
+                        @if (isOnline)
+                        {
+                            <span class="online-dot"></span>
+                        }
+                    </div>
+                    <div class="participant-info" style="flex: 1; min-width: 0;">
+                        <div class="participant-name" title="@participant.User.UserName">
+                            @participant.User.UserName
+                            @if (isCurrentUser)
+                            {
+                                <text> (You)</text>
+                            }
+                            <span class="role-badge role-@roleClass">@participant.Role</span>
+                        </div>
+                        <div class="participant-role">
+                            @if (isOnline)
+                            {
+                                <span style="color: #10b981;">● Online</span>
+                            }
+                            else
+                            {
+                                <span>○ Offline</span>
+                            }
+                        </div>
+                    </div>
+                    
+                    
+                    @if (isGroup && isAdminOrCreator && !isCurrentUser && participant.Role != ChatAppProj.Models.ConversationRole.Creator)
+                    {
+                        <div class="participant-actions">
+                            @if (isCreator && participant.Role == ChatAppProj.Models.ConversationRole.Member)
+                            {
+                                <button class="btn-participant-action" 
+                                        onclick="makeAdmin(@participant.UserId, '@participant.User.UserName')"
+                                        title="Make Admin">
+                                    <i class="bi bi-shield-check"></i>
+                                </button>
+                            }
+                            <button class="btn-participant-action danger" 
+                                    onclick="removeMember(@participant.UserId, '@participant.User.UserName')"
+                                    title="Remove">
+                                    <i class="bi bi-person-dash"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
+                
+            }
+        </div>
+        <div class="group-actions" style="margin-top: 1rem;">
+            <button class="btn-group-action btn-danger-action" onclick="deleteConversation()">
+                <i class="bi bi-trash"></i>
+                Delete Chat
+            </button>
+        </div>
+    </aside>
+    
+    <main class="chat-container">
+        <header class="chat-header">
+            <h2 title="@conversationName">@conversationName</h2>
+            <a asp-action="Index" class="back-button">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </header>
+
+        <div class="messages-container" id="messagesContainer">
+            @if (messages.Count == 0)
+            {
+                <div class="empty-messages">
+                    <i class="bi bi-chat-dots" style="font-size: 3rem; color: #ddd;"></i>
+                    <p>No messages yet. Start the conversation!</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var message in messages)
+                {
+                    var isSent = message.SenderId == userId;
+                    var senderName = message.Sender?.DisplayName ?? message.Sender?.UserName ?? "Unknown";
+                    var senderInitial = senderName.Substring(0, 1).ToUpper();
+                    var timeDisplay = message.SentAt.ToString("HH:mm");
+
+                    <div class="message @(isSent ? "sent" : "")">
+                        <div class="message-avatar">@senderInitial</div>
+                        <div class="message-content">
+                            @if (!isSent)
+                            {
+                                <div class="message-sender">@senderName</div>
+                            }
+                            <div class="message-text">@message.Content</div>
+                            <div class="message-time">@timeDisplay</div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+
+        <div class="message-input-container">
+            <div class="message-input-wrapper">
+                <textarea 
+                    id="messageInput" 
+                    class="message-input" 
+                    placeholder="Type a message..."
+                    rows="1"></textarea>
+                <button id="sendButton" class="send-button">
+                    <i class="bi bi-send"></i>
+                    Send
+                </button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div id="editGroupModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Edit Group</h3>
+            <span class="close-modal" onclick="closeModal('editGroupModal')">&times;</span>
+        </div>
+        <form asp-action="UpdateGroupInfo" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="conversationId" value="@conversationId" />
+            
+            <div class="form-group">
+                <label class="form-label">Group Name</label>
+                <input type="text" name="groupName" class="form-input" 
+                       value="@conversationName" required />
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Group Picture</label>
+                <input type="file" name="groupPicture" class="form-input" 
+                       accept="image/*" />
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-modal btn-modal-secondary" 
+                        onclick="closeModal('editGroupModal')">Cancel</button>
+                <button type="submit" class="btn-modal btn-modal-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div id="addMemberModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add Member</h3>
+            <span class="close-modal" onclick="closeModal('addMemberModal')">&times;</span>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Search Users</label>
+            <input type="text" id="userSearch" class="form-input" 
+                   placeholder="Type to search..." onkeyup="filterUsers()" />
+        </div>
+
+        <div class="form-group" style="padding-top: 0;">
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                <button type="button" 
+                        id="friendsFilterBtn"
+                        class="toggle-btn active" 
+                        onclick="loadAvailableUsers(false)"
+                        style="flex: 1; padding: 0.75rem; border-radius: 8px; border: 2px solid #e0e0e0; background: white; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    <i class="bi bi-people"></i> Friends
+                </button>
+                <button type="button" 
+                        id="allUsersFilterBtn"
+                        class="toggle-btn" 
+                        onclick="loadAvailableUsers(true)"
+                        style="flex: 1; padding: 0.75rem; border-radius: 8px; border: 2px solid #e0e0e0; background: white; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+                    <i class="bi bi-globe"></i> All Users
+                </button>
+            </div>
+        </div>
+        
+        <div class="user-select-list" id="userList">
+        </div>
+        
+        <div class="modal-actions">
+            <button type="button" class="btn-modal btn-modal-secondary" 
+                    onclick="closeModal('addMemberModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    <script>
+        window.conversationConfig = {
+            conversationId: @conversationId,
+            userId: @userId,
+            userName: "@userName",
+            isGroup: @isGroup.ToString().ToLower()
+        };
+    </script>
+    <script src="~/js/conversation.js" asp-append-version="true"></script>
+}

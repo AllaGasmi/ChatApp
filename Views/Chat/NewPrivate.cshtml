@@ -1,0 +1,459 @@
+@{
+    ViewData["Title"] = "New Private Chat";
+    var users = ViewBag.Users as List<ChatAppProj.Models.ApplicationUser>;
+    var showAll = ViewBag.ShowAll ?? false;
+    var friendsCount = ViewBag.FriendsCount ?? 0;
+}
+
+@section Styles {
+    <style>
+        .new-chat-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: #666;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #667eea;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            color: #764ba2;
+        }
+
+        .filter-bar {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .filter-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .toggle-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            color: #666;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toggle-btn:hover {
+            background: #f5f5f5;
+        }
+
+        .toggle-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .user-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 2px solid transparent;
+            display: block;
+        }
+
+        .user-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 1.5rem;
+            position: relative;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .online-indicator {
+            width: 16px;
+            height: 16px;
+            background: #10b981;
+            border-radius: 50%;
+            border: 3px solid white;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+
+        .offline-indicator {
+            width: 16px;
+            height: 16px;
+            background: #999;
+            border-radius: 50%;
+            border: 3px solid white;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+
+        .user-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .user-details h3 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .user-status {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .friend-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #10b981;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .start-chat-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .start-chat-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 3rem 2rem;
+            background: white;
+            border-radius: 12px;
+            color: #999;
+        }
+
+        .results-count {
+            color: #666;
+            font-size: 0.875rem;
+            margin-left: auto;
+            padding: 0.5rem 1rem;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+    </style>
+}
+
+<div class="new-chat-container">
+    @Html.AntiForgeryToken()
+    
+    <a asp-action="Index" class="back-link">
+        <i class="bi bi-arrow-left"></i> Back to Conversations
+    </a>
+
+    <div class="page-header">
+        <h1>Start a Private Chat</h1>
+        <p>Choose someone to start a one-on-one conversation</p>
+    </div>
+
+    <!-- Filter and Search Bar -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" 
+                   id="searchInput" 
+                   class="search-input" 
+                   placeholder="Search by name..." 
+                   oninput="filterUsers()">
+        </div>
+        
+        <div class="filter-toggle">
+            <a asp-action="NewPrivate" asp-route-showAll="false" 
+               class="toggle-btn @(!showAll ? "active" : "")">
+                <i class="bi bi-people"></i>
+                Friends Only (@friendsCount)
+            </a>
+            <a asp-action="NewPrivate" asp-route-showAll="true" 
+               class="toggle-btn @(showAll ? "active" : "")">
+                <i class="bi bi-globe"></i>
+                All Users
+            </a>
+        </div>
+        
+        <div class="results-count" id="resultsCount">
+            @users.Count @(users.Count == 1 ? "user" : "users")
+        </div>
+    </div>
+
+    @if (users.Count == 0)
+    {
+        <div class="empty-state">
+            <i class="bi bi-person-x"></i>
+            <h2>@(showAll ? "No Users Available" : "No Friends Yet")</h2>
+            <p>
+                @if (showAll)
+                {
+                    <text>There are no other users to chat with at the moment.</text>
+                }
+                else
+                {
+                    <text>You haven't added any friends yet. Try switching to "All Users" to start conversations.</text>
+                }
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="users-grid" id="usersGrid">
+            @foreach (var user in users)
+            {
+                var initial = user.UserName?.Substring(0, 1).ToUpper() ?? "?";
+                var displayName = user.DisplayName ?? user.UserName;
+                var isOnline = user.IsOnline;
+                var lastSeen = user.LastSeen.HasValue 
+                    ? $"Last seen {user.LastSeen.Value.ToString("MMM dd, HH:mm")}"
+                    : "Never seen";
+
+                <div class="user-card" 
+                     onclick="startChat(@user.Id)" 
+                     data-username="@user.UserName?.ToLower()" 
+                     data-displayname="@displayName?.ToLower()">
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            @if (!string.IsNullOrEmpty(user.ProfilePicture))
+                            {
+                                <img src="@user.ProfilePicture" alt="@displayName" />
+                            }
+                            else
+                            {
+                                <span>@initial</span>
+                            }
+                            @if (isOnline)
+                            {
+                                <span class="online-indicator"></span>
+                            }
+                            else
+                            {
+                                <span class="offline-indicator"></span>
+                            }
+                        </div>
+                        <div class="user-details">
+                            <h3>
+                                @displayName
+                                @if (!showAll)
+                                {
+                                    <span class="friend-badge">Friend</span>
+                                }
+                            </h3>
+                            <div class="user-status">
+                                @if (isOnline)
+                                {
+                                    <span style="color: #10b981;">● Online</span>
+                                }
+                                else
+                                {
+                                    <span>@lastSeen</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <button class="start-chat-btn" type="button">
+                        <i class="bi bi-chat-dots"></i> Start Chat
+                    </button>
+                </div>
+            }
+        </div>
+        
+        <div class="no-results" id="noResults" style="display: none;">
+            <i class="bi bi-search" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+            <p>No users found matching your search</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function startChat(otherUserId) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '@Url.Action("CreatePrivate", "Chat")';
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'otherUserId';
+            input.value = otherUserId;
+
+            form.appendChild(input);
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) {
+                form.appendChild(token.cloneNode());
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        function filterUsers() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const userCards = document.querySelectorAll('.user-card');
+            const noResults = document.getElementById('noResults');
+            const resultsCount = document.getElementById('resultsCount');
+            let visibleCount = 0;
+
+            userCards.forEach(card => {
+                const username = card.getAttribute('data-username') || '';
+                const displayname = card.getAttribute('data-displayname') || '';
+                
+                const matches = username.includes(searchTerm) || displayname.includes(searchTerm);
+                
+                if (matches) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Update results count
+            resultsCount.textContent = `${visibleCount} ${visibleCount === 1 ? 'user' : 'users'}`;
+
+            // Show/hide no results message
+            if (visibleCount === 0 && searchTerm !== '') {
+                noResults.style.display = 'block';
+                document.getElementById('usersGrid').style.display = 'none';
+            } else {
+                noResults.style.display = 'none';
+                document.getElementById('usersGrid').style.display = 'grid';
+            }
+        }
+
+        // Focus search on page load
+        document.getElementById('searchInput')?.focus();
+    </script>
+}
