@@ -90,12 +90,12 @@
         }
         else
         {
-            <div class="group-actions" style="margin-top: 1rem;">
+            @* <div class="group-actions" style="margin-top: 1rem;">
                 <button class="btn-group-action btn-danger-action" onclick="deleteConversation()">
                     <i class="bi bi-trash"></i>
                     Delete Chat
                 </button>
-            </div>
+            </div> *@
         }
         
         <h3>
@@ -148,6 +148,7 @@
                         </div>
                     </div>
                     
+                    
                     @if (isGroup && isAdminOrCreator && !isCurrentUser && participant.Role != ChatAppProj.Models.ConversationRole.Creator)
                     {
                         <div class="participant-actions">
@@ -167,7 +168,14 @@
                         </div>
                     }
                 </div>
+                
             }
+        </div>
+        <div class="group-actions" style="margin-top: 1rem;">
+            <button class="btn-group-action btn-danger-action" onclick="deleteConversation()">
+                <i class="bi bi-trash"></i>
+                Delete Chat
+            </button>
         </div>
     </aside>
     

@@ -248,10 +248,10 @@
                     <a asp-controller="Chat" asp-action="Conversation" asp-route-id="@conversation.ConversationId" 
                        class="recent-item">
                         <div class="recent-avatar-container">
-                            <img src="@conversation.AvatarUrl" 
-                                 alt="@conversation.Name" 
-                                 class="recent-avatar"></img>
-                        </div>
+    <img src="@(conversation.AvatarUrl ?? "default-group.jpg")"
+         alt="@conversation.Name"
+         class="recent-avatar" />
+</div>
                         <div class="recent-info">
                             <div class="recent-header">
                                 <div class="recent-name">
